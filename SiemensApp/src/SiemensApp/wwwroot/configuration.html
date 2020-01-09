@@ -1,0 +1,43 @@
+﻿<form>
+    <label for="url">Url</label>
+    <input type="text" id="url" class="form-control" required>
+    <br>
+    <label for="userName">User Name</label>
+    <input type="text" id="userName" class="form-control" required>
+    <br>
+    <label for="password">Password</label>
+    <input type="password" id="password" required>
+    <button type="submit">Save</button>
+</form>
+<script type="text/javascript" src="../Resources/js/jquery.min.js"></script>
+<script type="text/javascript">
+    jQuery("form").submit(function (e) {
+        e.preventDefault();
+
+        var params = new URLSearchParams(location.search)
+        var siteId = params.get("siteId");
+        if (!siteId) {
+            alert("siteId required for saving setting");
+            return;
+        }
+        var siteConfiguration = {
+            SiteId: siteId,
+            Url: $('#url').val(),
+            UserName: $('#userName').val(),
+            Password: $('#password').val(),
+        };
+
+        $.ajax({
+            url: '../siteConfiguration/create',
+            type: 'post',
+            contentType: 'application/json',
+            data: JSON.stringify(siteConfiguration),
+            success: function (resp) {
+                // TO-DO;
+            },
+            error: function (resp) {
+                // TO-DO;
+            },
+        });
+    });
+</script>

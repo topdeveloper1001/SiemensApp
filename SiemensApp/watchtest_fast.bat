@@ -1,0 +1,1 @@
+dotnet watch --project .\test\SiemensApp.Test\SiemensApp.Test.csproj test --filter Category!=UseSqlServer /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:Exclude=\"[*]SiementsApp.Program,[*]Microsoft.*,[*]System.*,[*]Willow.Infrastructure.*,[*]SiementsApp.Database.*,[xunit*]*\" /p:CoverletOutput=.\lcov.info

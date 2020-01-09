@@ -1,0 +1,1 @@
+dotnet watch --project .\test\SiemensApp.Test\SiemensApp.Test.csproj test /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:Exclude=\"[*]SiemensApp.Program,[*]Microsoft.*,[*]System.*,[*]Willow.Infrastructure.*,[xunit*]*\" /p:CoverletOutput=.\lcov.info
