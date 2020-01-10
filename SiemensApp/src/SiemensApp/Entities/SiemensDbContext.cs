@@ -6,12 +6,13 @@ namespace SiemensApp.Entities
     {
         public SiemensDbContext(DbContextOptions<SiemensDbContext> options) : base(options)
         {
-            this.UseManagedIdentity();
+            //this.UseManagedIdentity();
             ChangeTracker.LazyLoadingEnabled = false;
             ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         }
 
         public DbSet<SiteConfigurationEntity> SiteConfigurations { get; set; }
+        public DbSet<SystemObjectEntity> SystemObjects { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

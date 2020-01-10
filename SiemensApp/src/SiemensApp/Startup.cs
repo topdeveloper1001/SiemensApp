@@ -32,13 +32,12 @@ namespace SiemensApp
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddApiServices(Configuration, _env);
-
             services.AddMemoryCache();
 
             services.AddJwtAuthentication(Configuration["Auth0:Domain"], Configuration["Auth0:Audience"], _env);
             var connectionString = Configuration.GetConnectionString("SiemensDb");
             AddDbContexts(services, connectionString);
-            services.AddSingleton<IDbUpgradeChecker, DbUpgradeChecker>();
+            //services.AddSingleton<IDbUpgradeChecker, DbUpgradeChecker>();
 
             services
                 .AddHealthChecks()
@@ -46,6 +45,10 @@ namespace SiemensApp
                 .AddAssemblyVersion();
 
             services.AddScoped<ISiteConfigurationService, SiteConfigurationService>();
+            services.AddTransient<ImportService>();
+            services.AddMemoryCache();
+            services.AddSingleton<IApiTokenProvider, ApiTokenProvider>();
+            services.AddHttpClient();
         }
 
         private void AddDbContexts(IServiceCollection services, string connectionString)
@@ -58,7 +61,8 @@ namespace SiemensApp
             services.AddDbContext<SiemensDbContext>(contextOptions);
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IDbUpgradeChecker dbUpgradeChecker)
+        //public void Configure(IApplicationBuilder app, IHostingEnvironment env, IDbUpgradeChecker dbUpgradeChecker)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             app.UseHealthChecks("/healthcheck", new HealthCheckOptions
             {
@@ -68,7 +72,7 @@ namespace SiemensApp
 
             app.UseAuthentication();
             app.UseApiServices(Configuration, env);
-            dbUpgradeChecker.EnsureDatabaseUpToDate(env);
+            //dbUpgradeChecker.EnsureDatabaseUpToDate(env);
 
             app.UseStaticFiles();
             app.UseStaticFiles(new StaticFileOptions()

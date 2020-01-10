@@ -12,6 +12,7 @@ namespace SiemensApp.Services
     public interface ISiteConfigurationService
     {
         Task CreateSiteConfiguration(SiteConfiguration siteConfiguration);
+        SiteConfiguration GetSiteConfiguration(Guid siteId);
     }
 
     public class SiteConfigurationService : ISiteConfigurationService
@@ -34,6 +35,14 @@ namespace SiemensApp.Services
             siteConfiguration.Password = Convert.ToBase64String(passwordBytes);
             _dbContext.SiteConfigurations.Add(SiteConfigurationEntity.MapFrom(siteConfiguration));
             await _dbContext.SaveChangesAsync();
+        }
+
+        public SiteConfiguration GetSiteConfiguration(Guid siteId)
+        {
+            var siteconfiguration = _dbContext.SiteConfigurations.FirstOrDefault(sc => sc.SiteId == siteId);
+            if(siteconfiguration == null)
+                throw new BadRequestException("SiteConfiguration does not exist");
+            return SiteConfigurationEntity.MapTo(siteconfiguration);
         }
     }
 }

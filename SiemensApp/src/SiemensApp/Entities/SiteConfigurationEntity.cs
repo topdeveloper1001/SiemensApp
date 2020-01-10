@@ -36,5 +36,18 @@ namespace SiemensApp.Entities
                 Password = model.Password,
             };
         }
+        public static SiteConfiguration MapTo(SiteConfigurationEntity entity)
+        {
+            if (entity == null)
+                return null;
+
+            return new SiteConfiguration()
+            {
+                SiteId = entity.SiteId,
+                Url = entity.Url,
+                UserName = entity.UserName,
+                Password = entity.Password,
+            };
+        }
     }
 }
