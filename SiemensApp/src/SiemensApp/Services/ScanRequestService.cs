@@ -10,38 +10,87 @@ using SiemensApp.Domain;
 using SiemensApp.Entities;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using CsvHelper;
+using Microsoft.Extensions.Options;
+using SiemensApp.Infrastructure.Queue;
+using System.Threading;
+using Microsoft.Extensions.DependencyInjection;
+using System.Data.SqlClient;
 
 namespace SiemensApp.Services
 {
-    public class ImportService
+    public interface IScanRequestService
     {
-        private readonly ILogger<ImportService> _logger;
+        Task<int> CreateScanRequest(ScanRequest scanRequest);
+        Task UpdateScanRequest(ScanRequest scanRequest);
+        Task Scan(ScanRequest scanRequest);
+    }
+    public class ScanRequestService:IScanRequestService
+    {
+        private readonly IBackgroundTaskQueue _taskQueue;
+        private readonly CancellationToken _cancellationToken;
+        private readonly ILogger<ScanRequestService> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly SiemensDbContext _context;
+        private readonly SiemensDbContext _dbContext;
+        private readonly AppSettings _options;
         private readonly IApiTokenProvider _apiTokenProvider;
-
-        public ImportService(ILogger<ImportService> logger, IHttpClientFactory httpClientFactory, IApiTokenProvider apiTokenProvider, SiemensDbContext context)
+        private readonly ISiteConfigurationService _siteConfigurationService;
+        private readonly IServiceScopeFactory _scope;
+        private int ProcessingCount = 0;
+        public ScanRequestService(IServiceScopeFactory scope, ISiteConfigurationService siteConfigurationService, IBackgroundTaskQueue taskQueue, IApplicationLifetime applicationLifetime, ILogger<ScanRequestService> logger, IHttpClientFactory httpClientFactory, IApiTokenProvider apiTokenProvider, IOptions<AppSettings> options, SiemensDbContext dbContext)
         {
+            _scope = scope;
+            _siteConfigurationService = siteConfigurationService;
             _logger = logger;
             _httpClientFactory = httpClientFactory;
             _apiTokenProvider = apiTokenProvider;
-            _context = context;
+            _options = options.Value;
+            _dbContext = dbContext;
+            _taskQueue = taskQueue;
+            _cancellationToken = applicationLifetime.ApplicationStopping;
         }
-
-        public async Task Import(AuthenticationOptions authenticationOptions)
+        public async Task<int> CreateScanRequest(ScanRequest scanRequest)
         {
-            var startUrl = "API/systembrowser"; //it is not clear. I am not sure where should I get this value.
+            var entity = ScanRequestEntity.MapFrom(scanRequest);
+            _dbContext.ScanRequests.Add(entity);
+            await _dbContext.SaveChangesAsync();
+            return entity.Id;
+        }
+        public async Task UpdateScanRequest(ScanRequest scanRequest)
+        {
+            var entity = ScanRequestEntity.MapFrom(scanRequest);
+            _dbContext.Entry(entity).State = EntityState.Modified;
+            _dbContext.Entry(entity).CurrentValues.SetValues(ScanRequestEntity.MapFrom(scanRequest));
+            await _dbContext.SaveChangesAsync();
+        }
+        private async Task UpdateScanRequest(SiemensDbContext context, ScanRequest scanRequest)
+        {
+            var entity = ScanRequestEntity.MapFrom(scanRequest);
+            context.Entry(entity).State = EntityState.Modified;
+            await context.SaveChangesAsync();
+            
+        }
+        public async Task Scan(ScanRequest scanRequest)
+        {
+            var siteConfiguration = _siteConfigurationService.GetSiteConfiguration(scanRequest.SiteId);
+            scanRequest.Id = await CreateScanRequest(scanRequest);
+            var startUrl = "API/systembrowser";
             using (var client = _httpClientFactory.CreateClient())
             {
-                var token = _apiTokenProvider.GetTokenAsync(authenticationOptions).Result;
+                var token = _apiTokenProvider.GetTokenAsync(AuthenticationOptions.Create(siteConfiguration)).Result;
 
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                client.BaseAddress = new Uri(authenticationOptions.Endpoint);   //it is not clear. I am not sure SiteConfiguration's url will be used as both of AuthenticationOptions' endpoint and baseurl.
+                client.BaseAddress = new Uri(_options.SystembrowserBaseUrl);
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                var topLevelItems = await ImportRecursive(client, startUrl, LinkType.Systembrowser, null);
+
+
+                _taskQueue.QueueBackgroundWorkItem(async action =>
+                {
+                    var topLevelItems = await StartScan(_scope, client, startUrl, LinkType.Systembrowser, siteConfiguration, scanRequest);
+                });
             }
         }
 
@@ -130,7 +179,7 @@ namespace SiemensApp.Services
 
             var recordCounter = 0;
 
-            var totalRecords = _context.SystemObjects.Count();
+            var totalRecords = _dbContext.SystemObjects.Count();
 
             var bufferBlock = new BufferBlock<SystemObjectEntity>(new DataflowBlockOptions { BoundedCapacity = 10 });
             var transformBlock = new TransformBlock<SystemObjectEntity, CsvObject>(async (systemObject) =>
@@ -210,7 +259,7 @@ namespace SiemensApp.Services
                 bufferBlock.LinkTo(transformBlock, new DataflowLinkOptions { PropagateCompletion = true });
                 transformBlock.LinkTo(writerBlock, new DataflowLinkOptions { PropagateCompletion = true });
 
-                foreach (var systemObject in _context.SystemObjects.AsNoTracking())
+                foreach (var systemObject in _dbContext.SystemObjects.AsNoTracking())
                 {
                     recordCounter++;
                     if (recordCounter % 1000 == 0)
@@ -227,10 +276,14 @@ namespace SiemensApp.Services
 
             return tmpFile;
         }
-
-        private async Task<List<DataItem>> ImportRecursive(HttpClient client, string url, LinkType linkType, int? parentSystemObjectId)
+        private async Task<List<DataItem>> StartScan(IServiceScopeFactory scope, HttpClient client, string url, LinkType linkType, SiteConfiguration siteConfiguration, ScanRequest scanRequest)
         {
+            var context = scope.CreateScope().ServiceProvider.GetService<SiemensDbContext>();
+            scanRequest.Status = ScanRequestStatus.Running;
+            scanRequest.StartTime = DateTime.UtcNow;
+            await UpdateScanRequest(context, scanRequest);
             var data = await client.GetAsync(url);
+            _logger.LogInformation("Started");
             if (!data.IsSuccessStatusCode)
             {
                 _logger.LogWarning("Failed to invoke {statusCode} {url}", data.StatusCode, url);
@@ -244,32 +297,52 @@ namespace SiemensApp.Services
                 ? JsonConvert.DeserializeObject<List<DataItem>>(strData)
                 : new List<DataItem> { JsonConvert.DeserializeObject<DataItem>(strData) };
 
-            foreach (var dataItem in items)
+            Parallel.ForEach(items, new ParallelOptions { MaxDegreeOfParallelism = siteConfiguration.MaxThreads }, dataItem =>
             {
-                var dbEntity = new SystemObjectEntity
-                {
-                    ParentId = parentSystemObjectId,
-                    Name = dataItem.Name,
-                    Descriptor = dataItem.Descriptor,
-                    Designation = dataItem.Designation,
-                    ObjectId = dataItem.ObjectId,
-                    SystemId = dataItem.SystemId,
-                    ViewId = dataItem.ViewId,
-                    SystemName = dataItem.SystemName,
-                    Attributes = dataItem.Attributes?.ToString(),
-                    Properties = dataItem.Properties?.ToString(),
-                    FunctionProperties = dataItem.FunctionProperties?.ToString()
-                };
-                await _context.SystemObjects.AddAsync(dbEntity);
-                await _context.SaveChangesAsync();
-                _context.Entry(dbEntity).State = EntityState.Detached;
 
                 foreach (var dataItemLink in dataItem.Links)
                 {
                     var lt = dataItemLink.Rel.Trim().ToLower() == "systembrowser"
                         ? LinkType.Systembrowser
                         : LinkType.Properties;
-                    dataItem.ChildrenItems.AddRange(await ImportRecursive(client, dataItemLink.Href, lt, dbEntity.Id));
+                    dataItem.ChildrenItems.AddRange(ImportRecursive(client, dataItemLink.Href, lt));
+                }
+                ProcessingCount++;
+                _logger.LogInformation($"Processing Count : {ProcessingCount}");
+            });
+
+            scanRequest.Status = ScanRequestStatus.Completed;
+            scanRequest.EndTime = DateTime.UtcNow;
+            scanRequest.NumberOfPoints = ProcessingCount;
+            await UpdateScanRequest(context, scanRequest);
+            _logger.LogInformation($"Completed. Total Processed Count : {ProcessingCount}");
+            return items;
+            
+        }
+        private List<DataItem> ImportRecursive(HttpClient client, string url, LinkType linkType)
+        {
+            var data = client.GetAsync(url).Result;
+            if (!data.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Failed to invoke {statusCode} {url}", data.StatusCode, url);
+                return new List<DataItem>();
+            }
+            var strData = data.Content.ReadAsStringAsync().Result;
+            strData = strData.Trim();
+            _logger.LogInformation("URL: {url}", url);
+            _logger.LogInformation("Response: {response}", strData);
+            var items = linkType == LinkType.Systembrowser
+                ? JsonConvert.DeserializeObject<List<DataItem>>(strData)
+                : new List<DataItem> { JsonConvert.DeserializeObject<DataItem>(strData) };
+
+            foreach (var dataItem in items)
+            {
+                foreach (var dataItemLink in dataItem.Links)
+                {
+                    var lt = dataItemLink.Rel.Trim().ToLower() == "systembrowser"
+                        ? LinkType.Systembrowser
+                        : LinkType.Properties;
+                    dataItem.ChildrenItems.AddRange(ImportRecursive(client, dataItemLink.Href, lt));
                 }
             }
 

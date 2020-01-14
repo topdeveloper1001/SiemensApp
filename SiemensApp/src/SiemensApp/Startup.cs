@@ -9,7 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using SiemensApp.Database;
+using SiemensApp.Domain;
 using SiemensApp.Entities;
+using SiemensApp.Infrastructure.Queue;
 using SiemensApp.Services;
 using System.IO;
 
@@ -32,7 +34,14 @@ namespace SiemensApp
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddApiServices(Configuration, _env);
+            services.Configure<AppSettings>(Configuration.GetSection(nameof(AppSettings)));
+            services.AddScoped<ISiteConfigurationService, SiteConfigurationService>();
+            services.AddScoped<IScanRequestService, ScanRequestService>();
             services.AddMemoryCache();
+            services.AddSingleton<IApiTokenProvider, ApiTokenProvider>();
+            services.AddHttpClient();
+            services.AddHostedService<QueuedHostedService>();
+            services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
 
             services.AddJwtAuthentication(Configuration["Auth0:Domain"], Configuration["Auth0:Audience"], _env);
             var connectionString = Configuration.GetConnectionString("SiemensDb");
@@ -44,11 +53,7 @@ namespace SiemensApp
                 .AddDbContextCheck<SiemensDbContext>()
                 .AddAssemblyVersion();
 
-            services.AddScoped<ISiteConfigurationService, SiteConfigurationService>();
-            services.AddTransient<ImportService>();
-            services.AddMemoryCache();
-            services.AddSingleton<IApiTokenProvider, ApiTokenProvider>();
-            services.AddHttpClient();
+            
         }
 
         private void AddDbContexts(IServiceCollection services, string connectionString)

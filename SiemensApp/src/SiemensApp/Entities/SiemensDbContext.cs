@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace SiemensApp.Entities
 {
@@ -12,6 +13,7 @@ namespace SiemensApp.Entities
         }
 
         public DbSet<SiteConfigurationEntity> SiteConfigurations { get; set; }
+        public DbSet<ScanRequestEntity> ScanRequests { get; set; }
         public DbSet<SystemObjectEntity> SystemObjects { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)

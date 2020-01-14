@@ -9,7 +9,8 @@ namespace SiemensApp.Dto
         public string Url { get; set; }
         public string UserName { get; set; }
         public string Password { get; set; }
-
+        public int? Status { get; set; }
+        public int? MaxThreads { get; set; }
         public static SiteConfiguration MapTo(SiteConfigurationDto model)
         {
             if (model == null)
@@ -21,6 +22,9 @@ namespace SiemensApp.Dto
                 Url = model.Url,
                 UserName = model.UserName,
                 Password = model.Password,
+                CreatedAt = DateTime.UtcNow,
+                Status = model.Status.HasValue ? model.Status.Value : 0,
+                MaxThreads = model.MaxThreads.HasValue ? model.MaxThreads.Value : 0
             };
         }
     }
