@@ -8,6 +8,9 @@ CREATE TABLE [dbo].[SiteConfigurations](
 	[Url] [nvarchar](1024) NOT NULL,
 	[UserName] [nvarchar](256) NOT NULL,
 	[Password] [nvarchar](1024) NOT NULL,
+	[CreatedAt] [datetime] NOT NULL,
+	[Status] [int] NOT NULL,
+	[MaxThreads] [int] NOT NULL,
  CONSTRAINT [PK_SiteConfiguration] PRIMARY KEY CLUSTERED 
 (
 	[SiteId] ASC
@@ -41,3 +44,21 @@ GO
 
 ALTER TABLE [dbo].[SystemObjects] CHECK CONSTRAINT [FK_SystemObjects_SystemObjects]
 GO
+
+CREATE TABLE [dbo].[ScanRequests](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[SiteId] [uniqueidentifier] NOT NULL,
+	[CreatedBy] [uniqueidentifier] NOT NULL,
+	[CreatedAt] [datetime] NOT NULL,
+	[Status] [int] NOT NULL,
+	[StartTime] [datetime] NULL,
+	[EndTime] [datetime] NULL,
+	[NumberOfPoints] [int] NOT NULL,
+	[Messages] [nvarchar](max) NULL,
+ CONSTRAINT [PK_ScanRequests] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
