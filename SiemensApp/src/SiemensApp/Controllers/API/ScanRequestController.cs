@@ -9,6 +9,7 @@ using SiemensApp.Dto;
 namespace SiemensApp.Controllers
 {
     [ApiController]
+    [Route("api")]
     [ApiConventionType(typeof(DefaultApiConventions))]
     [Produces("application/json")]
     public class ScanRequestController : ControllerBase

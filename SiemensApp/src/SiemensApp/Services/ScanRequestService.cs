@@ -37,12 +37,14 @@ namespace SiemensApp.Services
         private readonly AppSettings _options;
         private readonly IApiTokenProvider _apiTokenProvider;
         private readonly ISiteConfigurationService _siteConfigurationService;
+        private readonly ISystemObjectService _systemObjectService;
         private readonly IServiceScopeFactory _scope;
         private int ProcessingCount = 0;
-        public ScanRequestService(IServiceScopeFactory scope, ISiteConfigurationService siteConfigurationService, IBackgroundTaskQueue taskQueue, IApplicationLifetime applicationLifetime, ILogger<ScanRequestService> logger, IHttpClientFactory httpClientFactory, IApiTokenProvider apiTokenProvider, IOptions<AppSettings> options, SiemensDbContext dbContext)
+        public ScanRequestService(IServiceScopeFactory scope, ISystemObjectService systemObjectService, ISiteConfigurationService siteConfigurationService, IBackgroundTaskQueue taskQueue, IApplicationLifetime applicationLifetime, ILogger<ScanRequestService> logger, IHttpClientFactory httpClientFactory, IApiTokenProvider apiTokenProvider, IOptions<AppSettings> options, SiemensDbContext dbContext)
         {
             _scope = scope;
             _siteConfigurationService = siteConfigurationService;
+            _systemObjectService = systemObjectService;
             _logger = logger;
             _httpClientFactory = httpClientFactory;
             _apiTokenProvider = apiTokenProvider;
@@ -65,11 +67,14 @@ namespace SiemensApp.Services
             _dbContext.Entry(entity).CurrentValues.SetValues(ScanRequestEntity.MapFrom(scanRequest));
             await _dbContext.SaveChangesAsync();
         }
-        private async Task UpdateScanRequest(SiemensDbContext context, ScanRequest scanRequest)
+        private async Task UpdateScanRequestInMultiThread(ScanRequest scanRequest)
         {
-            var entity = ScanRequestEntity.MapFrom(scanRequest);
-            context.Entry(entity).State = EntityState.Modified;
-            await context.SaveChangesAsync();
+            using (var context = _scope.CreateScope().ServiceProvider.GetService<SiemensDbContext>())
+            {
+                var entity = ScanRequestEntity.MapFrom(scanRequest);
+                context.Entry(entity).State = EntityState.Modified;
+                await context.SaveChangesAsync();
+            }
             
         }
         public async Task Scan(ScanRequest scanRequest)
@@ -89,7 +94,7 @@ namespace SiemensApp.Services
 
                 _taskQueue.QueueBackgroundWorkItem(async action =>
                 {
-                    var topLevelItems = await StartScan(_scope, client, startUrl, LinkType.Systembrowser, siteConfiguration, scanRequest);
+                    var topLevelItems = await StartScan(client, startUrl, LinkType.Systembrowser, siteConfiguration, scanRequest);
                 });
             }
         }
@@ -276,12 +281,11 @@ namespace SiemensApp.Services
 
             return tmpFile;
         }
-        private async Task<List<DataItem>> StartScan(IServiceScopeFactory scope, HttpClient client, string url, LinkType linkType, SiteConfiguration siteConfiguration, ScanRequest scanRequest)
+        private async Task<List<DataItem>> StartScan(HttpClient client, string url, LinkType linkType, SiteConfiguration siteConfiguration, ScanRequest scanRequest)
         {
-            var context = scope.CreateScope().ServiceProvider.GetService<SiemensDbContext>();
             scanRequest.Status = ScanRequestStatus.Running;
             scanRequest.StartTime = DateTime.UtcNow;
-            await UpdateScanRequest(context, scanRequest);
+            await UpdateScanRequestInMultiThread(scanRequest);
             var data = await client.GetAsync(url);
             _logger.LogInformation("Started");
             if (!data.IsSuccessStatusCode)
@@ -297,29 +301,58 @@ namespace SiemensApp.Services
                 ? JsonConvert.DeserializeObject<List<DataItem>>(strData)
                 : new List<DataItem> { JsonConvert.DeserializeObject<DataItem>(strData) };
 
+            // ------- for local testing ----------
+
+            //var items = new List<DataItem>();
+            //for(int i=0; i<100; i++)
+            //{
+            //    items.Add(new DataItem() { SystemId = i });
+            //}
+
+            //---------------------------------
+
             Parallel.ForEach(items, new ParallelOptions { MaxDegreeOfParallelism = siteConfiguration.MaxThreads }, dataItem =>
             {
+                var dbEntity = new SystemObjectEntity
+                {
+                    ParentId = null,
+                    Name = dataItem.Name,
+                    Descriptor = dataItem.Descriptor,
+                    Designation = dataItem.Designation,
+                    ObjectId = dataItem.ObjectId,
+                    SystemId = dataItem.SystemId,
+                    ViewId = dataItem.ViewId,
+                    SystemName = dataItem.SystemName,
+                    Attributes = dataItem.Attributes?.ToString(),
+                    Properties = dataItem.Properties?.ToString(),
+                    FunctionProperties = dataItem.FunctionProperties?.ToString()
+                };
 
+                _systemObjectService.CreateSystemObject(true, dbEntity).Wait();
+                
                 foreach (var dataItemLink in dataItem.Links)
                 {
                     var lt = dataItemLink.Rel.Trim().ToLower() == "systembrowser"
                         ? LinkType.Systembrowser
                         : LinkType.Properties;
-                    dataItem.ChildrenItems.AddRange(ImportRecursive(client, dataItemLink.Href, lt));
+                    dataItem.ChildrenItems.AddRange(ImportRecursive(client, dataItemLink.Href, lt, dbEntity.Id));
                 }
                 ProcessingCount++;
+                scanRequest.NumberOfPoints = ProcessingCount;
+                UpdateScanRequestInMultiThread(scanRequest).Wait();
                 _logger.LogInformation($"Processing Count : {ProcessingCount}");
+                Thread.Sleep(1000);
             });
 
             scanRequest.Status = ScanRequestStatus.Completed;
             scanRequest.EndTime = DateTime.UtcNow;
             scanRequest.NumberOfPoints = ProcessingCount;
-            await UpdateScanRequest(context, scanRequest);
+            await UpdateScanRequestInMultiThread(scanRequest);
             _logger.LogInformation($"Completed. Total Processed Count : {ProcessingCount}");
             return items;
             
         }
-        private List<DataItem> ImportRecursive(HttpClient client, string url, LinkType linkType)
+        private List<DataItem> ImportRecursive(HttpClient client, string url, LinkType linkType, int? parentSystemObjectId)
         {
             var data = client.GetAsync(url).Result;
             if (!data.IsSuccessStatusCode)
@@ -337,12 +370,29 @@ namespace SiemensApp.Services
 
             foreach (var dataItem in items)
             {
+                var dbEntity = new SystemObjectEntity
+                {
+                    ParentId = parentSystemObjectId,
+                    Name = dataItem.Name,
+                    Descriptor = dataItem.Descriptor,
+                    Designation = dataItem.Designation,
+                    ObjectId = dataItem.ObjectId,
+                    SystemId = dataItem.SystemId,
+                    ViewId = dataItem.ViewId,
+                    SystemName = dataItem.SystemName,
+                    Attributes = dataItem.Attributes?.ToString(),
+                    Properties = dataItem.Properties?.ToString(),
+                    FunctionProperties = dataItem.FunctionProperties?.ToString()
+                };
+
+                _systemObjectService.CreateSystemObject(true, dbEntity).Wait();
+
                 foreach (var dataItemLink in dataItem.Links)
                 {
                     var lt = dataItemLink.Rel.Trim().ToLower() == "systembrowser"
                         ? LinkType.Systembrowser
                         : LinkType.Properties;
-                    dataItem.ChildrenItems.AddRange(ImportRecursive(client, dataItemLink.Href, lt));
+                    dataItem.ChildrenItems.AddRange(ImportRecursive(client, dataItemLink.Href, lt, dbEntity.Id));
                 }
             }
 

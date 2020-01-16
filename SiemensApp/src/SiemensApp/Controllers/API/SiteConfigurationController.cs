@@ -7,6 +7,7 @@ using SiemensApp.Services;
 namespace SiemensApp.Controllers
 {
     [ApiController]
+    [Route("api")]
     [ApiConventionType(typeof(DefaultApiConventions))]
     [Produces("application/json")]
     public class SiteConfigurationController : ControllerBase
