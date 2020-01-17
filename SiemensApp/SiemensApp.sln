@@ -5,11 +5,21 @@ VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{88E711F0-4BDC-457F-B09E-E3DD1A454191}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SiemensApp", "src\SiemensApp\SiemensApp.csproj", "{FB592B9B-B193-4A91-B042-979C5CDE7DCB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SiemensApp", "src\SiemensApp\SiemensApp.csproj", "{FB592B9B-B193-4A91-B042-979C5CDE7DCB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{E05FC4A1-7127-4975-9B6E-D7B6A1C92A62}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SiemensApp.Test", "test\SiemensApp.Test\SiemensApp.Test.csproj", "{76B73B6E-DCDA-474D-B4DC-9A6360A49D89}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SiemensApp.Test", "test\SiemensApp.Test\SiemensApp.Test.csproj", "{76B73B6E-DCDA-474D-B4DC-9A6360A49D89}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F41C42F1-3BB6-429C-AE77-7CAC50D2FB3E}"
+	ProjectSection(SolutionItems) = preProject
+		nuget.config = nuget.config
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nupkg", "nupkg", "{6525DE4F-5B22-47FA-9C58-23D17B25F847}"
+	ProjectSection(SolutionItems) = preProject
+		nupkg\Telerik.UI.for.AspNet.Core.2019.3.1023.nupkg = nupkg\Telerik.UI.for.AspNet.Core.2019.3.1023.nupkg
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,9 +29,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{FB592B9B-B193-4A91-B042-979C5CDE7DCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -49,8 +56,15 @@ Global
 		{76B73B6E-DCDA-474D-B4DC-9A6360A49D89}.Release|x86.ActiveCfg = Release|Any CPU
 		{76B73B6E-DCDA-474D-B4DC-9A6360A49D89}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{FB592B9B-B193-4A91-B042-979C5CDE7DCB} = {88E711F0-4BDC-457F-B09E-E3DD1A454191}
 		{76B73B6E-DCDA-474D-B4DC-9A6360A49D89} = {E05FC4A1-7127-4975-9B6E-D7B6A1C92A62}
+		{6525DE4F-5B22-47FA-9C58-23D17B25F847} = {F41C42F1-3BB6-429C-AE77-7CAC50D2FB3E}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4293520C-CF33-4867-A48F-6D4903EB8FFF}
 	EndGlobalSection
 EndGlobal

@@ -26,6 +26,8 @@ namespace SiemensApp.Services
         Task<int> CreateScanRequest(ScanRequest scanRequest);
         Task UpdateScanRequest(ScanRequest scanRequest);
         Task Scan(ScanRequest scanRequest);
+        Task<PropertyValueResponse> GetPropertyValueAsync(string objectId, string propertyId = null);
+        Task<string> ExportDataCsv();
     }
     public class ScanRequestService:IScanRequestService
     {

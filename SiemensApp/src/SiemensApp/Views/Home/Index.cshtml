@@ -1,7 +1,60 @@
-﻿
+﻿@using Kendo.Mvc.UI
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Home Page";
 }
+<div style="width: 100%; height: 40px; background-color: black" class="text-center mt-3 mb-3">
+    <img src="~/images/willow-logo.svg" style="height: 100%" />
+</div>
+<div class="text-center">
+    <h1 class="display-4">Willow + Desigo CC - API Test</h1>
+</div>
 
-<h1>Index</h1>
+<div class="row">
 
+    <div class="col-6">
+        @Html.Kendo().TreeView().Name("tvObjects2").DataTextField("DisplayName").Events(events => events.Change("onChange")).LoadOnDemand(true).DataSource(dataSource => dataSource
+          .Events(events => events.Error("onError"))
+          .Model(model => model
+            .Id("Id")
+            .HasChildren("HasChildren")
+            .Field("Name", typeof(string))
+            .Field("Id", typeof(int?))
+            .Field("Attributes", typeof(string))
+          )
+          .Read(read => read.Action("ReadData", "Home"))
+          .Custom()
+          .Schema(b => b.Data("Data").Total("Total"))
+          )
+
+    </div>
+    <div class="col-6">
+        <table class="table" id="attributesTable">
+            <thead>
+                <tr>
+                    <th>Attribute</th>
+                    <th>Value</th>
+                    <th>Data</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <table class="table" id="propertiesTable">
+            <thead>
+                <tr>
+                    <th>Properties</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <table class="table" id="functionPropertiesTable">
+            <thead>
+                <tr>
+                    <th>Function Properties</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>

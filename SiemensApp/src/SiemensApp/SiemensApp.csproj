@@ -27,6 +27,7 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="4.0.1" />
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="4.0.1" />
+    <PackageReference Include="Telerik.UI.for.AspNet.Core" Version="2019.3.1023" />
   </ItemGroup>
 
   <ItemGroup>

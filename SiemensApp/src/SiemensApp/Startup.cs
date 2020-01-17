@@ -51,7 +51,7 @@ namespace SiemensApp
                 })
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
-
+            services.AddKendo();
             services.AddApiServices(Configuration, _env);
             services.Configure<AppSettings>(Configuration.GetSection(nameof(AppSettings)));
             services.AddScoped<ISiteConfigurationService, SiteConfigurationService>();
@@ -89,23 +89,24 @@ namespace SiemensApp
         //public void Configure(IApplicationBuilder app, IHostingEnvironment env, IDbUpgradeChecker dbUpgradeChecker)
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            app.UseHealthChecks("/healthcheck", new HealthCheckOptions
-            {
-                Predicate = _ => true,
-                ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
-            });
+            //app.UseHealthChecks("/healthcheck", new HealthCheckOptions
+            //{
+            //    Predicate = _ => true,
+            //    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+            //});
 
             app.UseAuthentication();
             app.UseApiServices(Configuration, env);
+            
             //dbUpgradeChecker.EnsureDatabaseUpToDate(env);
 
             app.UseStaticFiles();
-            app.UseStaticFiles(new StaticFileOptions()
-            {
-                FileProvider = new PhysicalFileProvider(
-         Path.Combine(Directory.GetCurrentDirectory(), @"Resources")),
-                RequestPath = new PathString("/Resources")
-            });
+         //   app.UseStaticFiles(new StaticFileOptions()
+         //   {
+         //       FileProvider = new PhysicalFileProvider(
+         //Path.Combine(Directory.GetCurrentDirectory(), @"Resources")),
+         //       RequestPath = new PathString("/Resources")
+         //   });
 
             if (env.IsDevelopment())
             {
