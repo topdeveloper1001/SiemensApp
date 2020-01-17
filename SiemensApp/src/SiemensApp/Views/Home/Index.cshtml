@@ -12,18 +12,18 @@
 <div class="row">
 
     <div class="col-6">
-        @Html.Kendo().TreeView().Name("tvObjects2").DataTextField("DisplayName").Events(events => events.Change("onChange")).LoadOnDemand(true).DataSource(dataSource => dataSource
+        @Html.Kendo().TreeView().Name("tvObjects2").DataTextField("displayName").Events(events => events.Change("onChange")).LoadOnDemand(true).DataSource(dataSource => dataSource
           .Events(events => events.Error("onError"))
           .Model(model => model
-            .Id("Id")
-            .HasChildren("HasChildren")
-            .Field("Name", typeof(string))
-            .Field("Id", typeof(int?))
-            .Field("Attributes", typeof(string))
+            .Id("id")
+            .HasChildren("hasChildren")
+            .Field("name", typeof(string))
+            .Field("id", typeof(int?))
+            .Field("attributes", typeof(string))
           )
-          .Read(read => read.Action("ReadData", "Home"))
+          .Read(read => read.Action("readData", "home"))
           .Custom()
-          .Schema(b => b.Data("Data").Total("Total"))
+          .Schema(b => b.Data("data").Total("total"))
           )
 
     </div>

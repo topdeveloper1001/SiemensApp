@@ -3,9 +3,9 @@
 
 // Write your JavaScript code.
 
-const objectIdPropertyName = "ObjectId";
-const defaultPropertyName = "DefaultProperty";
-const retrievePropertyNames = ["FunctionDefaultProperty"];
+const objectIdPropertyName = "objectId";
+const defaultPropertyName = "defaultProperty";
+const retrievePropertyNames = ["functionDefaultProperty"];
 
 function onError(e) {
   this.cancelChanges();
@@ -35,9 +35,10 @@ async function onChange(e) {
 
   let dataItem = e.sender.dataItem(selection);
 
-  if (dataItem.Attributes) {
+    
+  if (dataItem.attributes) {
 
-    let attributes = JSON.parse(dataItem.Attributes);
+    let attributes = JSON.parse(dataItem.attributes);
     let retrievedPropertyValues = {};
     let objectId = attributes[objectIdPropertyName];
     if (objectId) {
@@ -70,8 +71,8 @@ async function onChange(e) {
     });
   }
 
-  if (dataItem.Properties) {
-    let properties = JSON.parse(dataItem.Properties);
+  if (dataItem.properties) {
+    let properties = JSON.parse(dataItem.properties);
     for (let i = 0; i < properties.length; i++) {
       $(`<tr>
         <td>${properties[i]}</td>
@@ -81,8 +82,8 @@ async function onChange(e) {
     
   }
 
-  if (dataItem.FunctionProperties) {
-    let properties = JSON.parse(dataItem.FunctionProperties);
+  if (dataItem.functionProperties) {
+    let properties = JSON.parse(dataItem.functionProperties);
     for (let i = 0; i < properties.length; i++) {
       $(`<tr>
         <td>${properties[i]}</td>

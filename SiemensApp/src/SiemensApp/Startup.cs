@@ -43,14 +43,7 @@ namespace SiemensApp
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
-            services.AddMvc()
-                .AddJsonOptions(options =>
-                {
-                    options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-                    options.SerializerSettings.ContractResolver = new DefaultContractResolver();
-                })
-                .SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
-
+           
             services.AddKendo();
             services.AddApiServices(Configuration, _env);
             services.Configure<AppSettings>(Configuration.GetSection(nameof(AppSettings)));
@@ -89,11 +82,11 @@ namespace SiemensApp
         //public void Configure(IApplicationBuilder app, IHostingEnvironment env, IDbUpgradeChecker dbUpgradeChecker)
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            //app.UseHealthChecks("/healthcheck", new HealthCheckOptions
-            //{
-            //    Predicate = _ => true,
-            //    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
-            //});
+            app.UseHealthChecks("/healthcheck", new HealthCheckOptions
+            {
+                Predicate = _ => true,
+                ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+            });
 
             app.UseAuthentication();
             app.UseApiServices(Configuration, env);
