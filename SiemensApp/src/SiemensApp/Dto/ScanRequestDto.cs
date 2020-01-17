@@ -21,5 +21,17 @@ namespace SiemensApp.Dto
                 NumberOfPoints = 0
             };
         }
+        public static ScanRequest Create(Guid siteId)
+        {
+            return new ScanRequest()
+            {
+                Id = 0,
+                SiteId = siteId,
+                CreatedBy = Guid.NewGuid(),
+                CreatedAt = DateTime.UtcNow,
+                Status = ScanRequestStatus.Requested,
+                NumberOfPoints = 0
+            };
+        }
     }
 }

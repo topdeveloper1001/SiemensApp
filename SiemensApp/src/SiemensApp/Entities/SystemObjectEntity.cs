@@ -3,6 +3,8 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Collections.Generic;
+using Newtonsoft.Json;
+
 
 namespace SiemensApp.Entities
 {
@@ -18,6 +20,7 @@ namespace SiemensApp.Entities
         public SystemObjectEntity Parent { get; set; }
 
         [InverseProperty(nameof(Parent))]
+        [JsonIgnore]
         public List<SystemObjectEntity> Children { get; set; } = new List<SystemObjectEntity>();
 
         public int SystemId { get; set; }

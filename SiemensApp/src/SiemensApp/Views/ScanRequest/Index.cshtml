@@ -1,0 +1,71 @@
+﻿@using Kendo.Mvc.UI
+@{
+    ViewData["Title"] = "Scan Request Page";
+}
+<div style="width: 100%; height: 40px; background-color: black" class="text-center mt-3 mb-3">
+    <img src="~/images/willow-logo.svg" style="height: 100%" />
+</div>
+<div class="text-center">
+    <h1 class="display-4">Willow + Desigo CC - Scan Requests</h1>
+</div>
+
+<div class="row">
+
+    @(Html.Kendo().Grid<SiemensApp.Domain.ScanRequest>()
+                            .Name("grid")
+                            .Columns(columns =>
+                            {
+                                columns.Bound("siteId").Width(150);
+                                columns.Bound("createdBy").Width(150);
+                                columns.Bound("createdAt").Width(150);
+                                columns.Bound("statusString").Width(150);
+                                columns.Bound("startTime").Width(150);
+                                columns.Bound("EndTime").Width(150);
+                                columns.Bound("numberOfPoints").Width(150);
+                                columns.Bound("messages").Width(150);
+
+                            })
+                            .ToolBar(toolbar =>
+                            {
+                                toolbar.Custom()
+                                .HtmlAttributes(new { onclick = "scan(); return false;" })
+                                .Name("scan")
+                                .Text("Scan")
+                                .IconClass("k-icon k-i-search");
+                                
+                            }
+                            )
+                            .Pageable()
+                            .Sortable()
+                            .Scrollable()
+                            .DataSource(dataSource => dataSource
+                                .Custom()
+                                .Batch(true)
+                                .PageSize(20)
+                                .Schema(schema => schema.Model(m => m.Id("id")).Data("data").Total("total"))
+                                .Transport(transport =>
+                                {
+                                    transport.Read(read => read.Action("ScanRequest_Read", "ScanRequest"));
+                                }
+                                )
+                            )
+    )
+</div>
+<script type="text/javascript">
+    function error_handler(e) {
+        if (e.errors) {
+            var message = "Errors:\n";
+            $.each(e.errors, function (key, value) {
+                if ('errors' in value) {
+                    $.each(value.errors, function() {
+                        message += this + "\n";
+                    });
+                }
+            });
+            alert(message);
+        }
+    }
+    function scan() {
+        window.location.href = "/ScanRequest/Scan";
+    }
+</script>

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using SiemensApp.Dto;
 using SiemensApp.Services;
 
-namespace SiemensApp.Controllers
+namespace SiemensApp.Api.Controllers
 {
     [ApiController]
     [Route("api")]

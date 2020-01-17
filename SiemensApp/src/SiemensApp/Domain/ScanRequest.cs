@@ -13,6 +13,7 @@ namespace SiemensApp.Domain
         public DateTime? EndTime { get; set; }
         public int NumberOfPoints { get; set; }
         public string Messages { get; set; }
+        public string StatusString { get; set; }
     }
 
     public enum ScanRequestStatus

@@ -6,7 +6,7 @@ using SiemensApp.Services;
 using System;
 using SiemensApp.Dto;
 
-namespace SiemensApp.Controllers
+namespace SiemensApp.Api.Controllers
 {
     [ApiController]
     [Route("api")]

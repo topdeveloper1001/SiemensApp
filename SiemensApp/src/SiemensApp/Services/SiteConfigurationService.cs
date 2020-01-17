@@ -13,6 +13,7 @@ namespace SiemensApp.Services
     {
         Task CreateSiteConfiguration(SiteConfiguration siteConfiguration);
         SiteConfiguration GetSiteConfiguration(Guid siteId);
+        SiteConfiguration GetSiteConfiguration();
     }
 
     public class SiteConfigurationService : ISiteConfigurationService
@@ -41,6 +42,13 @@ namespace SiemensApp.Services
         {
             var siteconfiguration = _dbContext.SiteConfigurations.FirstOrDefault(sc => sc.SiteId == siteId);
             if(siteconfiguration == null)
+                throw new BadRequestException("SiteConfiguration does not exist");
+            return SiteConfigurationEntity.MapTo(siteconfiguration);
+        }
+        public SiteConfiguration GetSiteConfiguration()
+        {
+            var siteconfiguration = _dbContext.SiteConfigurations.FirstOrDefault();
+            if (siteconfiguration == null)
                 throw new BadRequestException("SiteConfiguration does not exist");
             return SiteConfigurationEntity.MapTo(siteconfiguration);
         }

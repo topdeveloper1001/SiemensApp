@@ -18,12 +18,14 @@ using SiemensApp.Infrastructure.Queue;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using System.Data.SqlClient;
-
+using AutoMapper;
+using SiemensApp.Mapping;
 namespace SiemensApp.Services
 {
     public interface IScanRequestService
     {
         Task<int> CreateScanRequest(ScanRequest scanRequest);
+        Task<List<ScanRequest>> GetAllAsync();
         Task UpdateScanRequest(ScanRequest scanRequest);
         Task Scan(ScanRequest scanRequest);
         Task<PropertyValueResponse> GetPropertyValueAsync(string objectId, string propertyId = null);
@@ -41,9 +43,11 @@ namespace SiemensApp.Services
         private readonly ISiteConfigurationService _siteConfigurationService;
         private readonly ISystemObjectService _systemObjectService;
         private readonly IServiceScopeFactory _scope;
+        private readonly IMapper _mapper;
         private int ProcessingCount = 0;
-        public ScanRequestService(IServiceScopeFactory scope, ISystemObjectService systemObjectService, ISiteConfigurationService siteConfigurationService, IBackgroundTaskQueue taskQueue, IApplicationLifetime applicationLifetime, ILogger<ScanRequestService> logger, IHttpClientFactory httpClientFactory, IApiTokenProvider apiTokenProvider, IOptions<AppSettings> options, SiemensDbContext dbContext)
+        public ScanRequestService(IMapper mapper, IServiceScopeFactory scope, ISystemObjectService systemObjectService, ISiteConfigurationService siteConfigurationService, IBackgroundTaskQueue taskQueue, IApplicationLifetime applicationLifetime, ILogger<ScanRequestService> logger, IHttpClientFactory httpClientFactory, IApiTokenProvider apiTokenProvider, IOptions<AppSettings> options, SiemensDbContext dbContext)
         {
+            _mapper = mapper;
             _scope = scope;
             _siteConfigurationService = siteConfigurationService;
             _systemObjectService = systemObjectService;
@@ -54,6 +58,10 @@ namespace SiemensApp.Services
             _dbContext = dbContext;
             _taskQueue = taskQueue;
             _cancellationToken = applicationLifetime.ApplicationStopping;
+        }
+        public async Task<List<ScanRequest>> GetAllAsync()
+        {
+            return await _dbContext.ScanRequests.Select(x=> _mapper.Map<ScanRequest>(x)).ToListAsync();
         }
         public async Task<int> CreateScanRequest(ScanRequest scanRequest)
         {

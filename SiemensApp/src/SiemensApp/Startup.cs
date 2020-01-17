@@ -1,4 +1,5 @@
-﻿using HealthChecks.UI.Client;
+﻿using AutoMapper;
+using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
@@ -43,7 +44,7 @@ namespace SiemensApp
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
-           
+            services.AddAutoMapper(System.Reflection.Assembly.GetExecutingAssembly());
             services.AddKendo();
             services.AddApiServices(Configuration, _env);
             services.Configure<AppSettings>(Configuration.GetSection(nameof(AppSettings)));
