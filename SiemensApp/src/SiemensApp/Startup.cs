@@ -56,6 +56,7 @@ namespace SiemensApp
             services.AddHttpClient();
             services.AddHostedService<QueuedHostedService>();
             services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+            services.AddSingleton<IDbUpgradeChecker, DbUpgradeChecker>();
 
             services.AddJwtAuthentication(Configuration["Auth0:Domain"], Configuration["Auth0:Audience"], _env);
             var connectionString = Configuration.GetConnectionString("SiemensDb");
@@ -80,9 +81,9 @@ namespace SiemensApp
             services.AddDbContext<SiemensDbContext>(contextOptions);
         }
 
-        //public void Configure(IApplicationBuilder app, IHostingEnvironment env, IDbUpgradeChecker dbUpgradeChecker)
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IDbUpgradeChecker dbUpgradeChecker)
         {
+            dbUpgradeChecker.EnsureDatabaseUpToDate(env);
             app.UseHealthChecks("/healthcheck", new HealthCheckOptions
             {
                 Predicate = _ => true,
@@ -91,8 +92,6 @@ namespace SiemensApp
 
             app.UseAuthentication();
             app.UseApiServices(Configuration, env);
-            
-            //dbUpgradeChecker.EnsureDatabaseUpToDate(env);
 
             app.UseStaticFiles();
          //   app.UseStaticFiles(new StaticFileOptions()
