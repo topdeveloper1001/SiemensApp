@@ -42,6 +42,7 @@ namespace SiemensApp.Entities
         public string Properties { get; set; }
 
         public string FunctionProperties { get; set; }
+        public Guid? SiteId { get; set; }
 
         [NotMapped]
         public bool HasChildren { get; set; }

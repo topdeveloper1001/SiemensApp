@@ -8,7 +8,9 @@
 <div class="text-center">
     <h1 class="display-4">Willow + Desigo CC - System Objects</h1>
 </div>
-
+<div class="row">
+    <input type="button" value="Export" onclick="exportcsv(); return;" class="btn btn-default" />
+</div>
 <div class="row">
 
     <div class="col-6">
@@ -21,7 +23,7 @@
             .Field("id", typeof(int?))
             .Field("attributes", typeof(string))
           )
-          .Read(read => read.Action("readData", "home"))
+          .Read(read => read.Action("ReadData", "Home", new { siteId = "F05D307B-8D33-4DB3-B20D-7F2A844BEF90" }))
           .Custom()
           .Schema(b => b.Data("data").Total("total"))
           )
@@ -58,3 +60,9 @@
         </table>
     </div>
 </div>
+<script type="text/javascript">
+    
+    function exportcsv() {
+        window.location.href = "/api/csvExport";
+    }
+</script>

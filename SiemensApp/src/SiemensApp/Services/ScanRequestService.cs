@@ -26,6 +26,7 @@ namespace SiemensApp.Services
     {
         Task<int> CreateScanRequest(ScanRequest scanRequest);
         Task<List<ScanRequest>> GetAllAsync();
+        Task<List<ScanRequest>> GetAllBySiteIdAsync(Guid siteId);
         Task UpdateScanRequest(ScanRequest scanRequest);
         Task Scan(ScanRequest scanRequest);
         Task<PropertyValueResponse> GetPropertyValueAsync(string objectId, string propertyId = null);
@@ -45,6 +46,7 @@ namespace SiemensApp.Services
         private readonly IServiceScopeFactory _scope;
         private readonly IMapper _mapper;
         private int ProcessingCount = 0;
+        private Guid SiteId;
         public ScanRequestService(IMapper mapper, IServiceScopeFactory scope, ISystemObjectService systemObjectService, ISiteConfigurationService siteConfigurationService, IBackgroundTaskQueue taskQueue, IApplicationLifetime applicationLifetime, ILogger<ScanRequestService> logger, IHttpClientFactory httpClientFactory, IApiTokenProvider apiTokenProvider, IOptions<AppSettings> options, SiemensDbContext dbContext)
         {
             _mapper = mapper;
@@ -62,6 +64,10 @@ namespace SiemensApp.Services
         public async Task<List<ScanRequest>> GetAllAsync()
         {
             return await _dbContext.ScanRequests.Select(x=> _mapper.Map<ScanRequest>(x)).ToListAsync();
+        }
+        public async Task<List<ScanRequest>> GetAllBySiteIdAsync(Guid siteId)
+        {
+            return await _dbContext.ScanRequests.Where(x => x.SiteId == siteId).Select(x => _mapper.Map<ScanRequest>(x)).ToListAsync();
         }
         public async Task<int> CreateScanRequest(ScanRequest scanRequest)
         {
@@ -89,6 +95,7 @@ namespace SiemensApp.Services
         }
         public async Task Scan(ScanRequest scanRequest)
         {
+            SiteId = scanRequest.SiteId;
             var siteConfiguration = _siteConfigurationService.GetSiteConfiguration(scanRequest.SiteId);
             scanRequest.Id = await CreateScanRequest(scanRequest);
             var startUrl = "API/systembrowser";
@@ -97,7 +104,7 @@ namespace SiemensApp.Services
                 var token = _apiTokenProvider.GetTokenAsync(AuthenticationOptions.Create(siteConfiguration)).Result;
 
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                client.BaseAddress = new Uri(_options.SystembrowserBaseUrl);
+                client.BaseAddress = new Uri(siteConfiguration.Url);
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
@@ -335,7 +342,8 @@ namespace SiemensApp.Services
                     SystemName = dataItem.SystemName,
                     Attributes = dataItem.Attributes?.ToString(),
                     Properties = dataItem.Properties?.ToString(),
-                    FunctionProperties = dataItem.FunctionProperties?.ToString()
+                    FunctionProperties = dataItem.FunctionProperties?.ToString(),
+                    SiteId = SiteId
                 };
 
                 _systemObjectService.CreateSystemObject(true, dbEntity).Wait();
@@ -392,7 +400,8 @@ namespace SiemensApp.Services
                     SystemName = dataItem.SystemName,
                     Attributes = dataItem.Attributes?.ToString(),
                     Properties = dataItem.Properties?.ToString(),
-                    FunctionProperties = dataItem.FunctionProperties?.ToString()
+                    FunctionProperties = dataItem.FunctionProperties?.ToString(),
+                    SiteId = SiteId
                 };
 
                 _systemObjectService.CreateSystemObject(true, dbEntity).Wait();

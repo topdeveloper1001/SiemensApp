@@ -17,7 +17,7 @@ namespace SiemensApp.Domain
         {
             return new AuthenticationOptions
             {
-                Endpoint = siteConfiguration.Url,
+                Endpoint = siteConfiguration.Url + "/API/api/token",
                 Username = siteConfiguration.UserName,
                 Password = siteConfiguration.Password
             };

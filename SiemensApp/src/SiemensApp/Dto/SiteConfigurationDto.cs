@@ -11,6 +11,13 @@ namespace SiemensApp.Dto
         public string Password { get; set; }
         public int? Status { get; set; }
         public int? MaxThreads { get; set; }
+        public static SiteConfigurationDto Create(Guid siteId)
+        {
+            return new SiteConfigurationDto()
+            {
+                SiteId = siteId
+            };
+        }
         public static SiteConfiguration MapTo(SiteConfigurationDto model)
         {
             if (model == null)

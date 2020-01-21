@@ -1,0 +1,59 @@
+﻿@model SiemensApp.Dto.SiteConfigurationDto
+@{
+    ViewData["Title"] = "Site Configuration Page";
+}
+<div style="width: 100%; height: 40px; background-color: black" class="text-center mt-3 mb-3">
+    <img src="~/images/willow-logo.svg" style="height: 100%" />
+</div>
+<div class="text-center">
+    <h1 class="display-4">Willow + Desigo CC - Site Configuration</h1>
+</div>
+
+<div class="row col-sm-8">
+    @using (Html.BeginForm("Save","SiteConfiguration"))
+    {
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        <div class="form-group">
+            @Html.LabelFor(model => model.SiteId, "Site Id")
+            @Html.EditorFor(model => model.SiteId, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.SiteId, "", new { @class = "text-danger" })
+        </div>
+        <div class="form-group">
+            @Html.LabelFor(model => model.UserName, "User Name")
+            @Html.EditorFor(model => model.UserName, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.UserName, "", new { @class = "text-danger" })
+        </div>
+        <div class="form-group">
+            @Html.LabelFor(model => model.Password)
+            @Html.EditorFor(model => model.Password, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.Password, "", new { @class = "text-danger" })
+        </div>
+        <div class="form-group">
+            @Html.LabelFor(model => model.MaxThreads, "No. of Threads")
+            @Html.EditorFor(model => model.MaxThreads, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(model => model.MaxThreads, "", new { @class = "text-danger" })
+        </div>
+        <input type="submit" value="Save" class="btn btn-default" />
+    }
+
+
+</div>
+<script type="text/javascript">
+    function error_handler(e) {
+        if (e.errors) {
+            var message = "Errors:\n";
+            $.each(e.errors, function (key, value) {
+                if ('errors' in value) {
+                    $.each(value.errors, function() {
+                        message += this + "\n";
+                    });
+                }
+            });
+            alert(message);
+        }
+    }
+    function scan() {
+        window.location.href = "/ScanRequest/Scan";
+    }
+</script>

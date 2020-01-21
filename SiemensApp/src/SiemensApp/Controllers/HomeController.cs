@@ -45,9 +45,9 @@ namespace SiemensApp.Controllers
             return RedirectToAction(nameof(Index));
         }
         
-        public async Task<ActionResult<DataSourceResult>> ReadData([DataSourceRequest] DataSourceRequest request, [FromQuery] int? id)
+        public async Task<ActionResult<DataSourceResult>> ReadData([DataSourceRequest] DataSourceRequest request, [FromQuery] int? id, [FromQuery] Guid siteId)
         {
-            var currentLevel = await _context.SystemObjects.Where(s => s.ParentId == id).ToListAsync();
+            var currentLevel = await _context.SystemObjects.Where(s => s.ParentId == id && s.SiteId == siteId).ToListAsync();
 
             var ids = currentLevel.Select(o => o.Id).ToList();
 

@@ -34,33 +34,14 @@ namespace SiemensApp.Controllers
             return View();
         }
 
-        
-        
-        public async Task<ActionResult<DataSourceResult>> ReadData([DataSourceRequest] DataSourceRequest request, [FromQuery] int? id)
+        public ActionResult<DataSourceResult> ScanRequest_Read([DataSourceRequest] DataSourceRequest request, [FromQuery] Guid siteId)
         {
-            var currentLevel = await _context.SystemObjects.Where(s => s.ParentId == id).ToListAsync();
-
-            var ids = currentLevel.Select(o => o.Id).ToList();
-
-            var children = await _context.SystemObjectsChildrenExists.Where(c => ids.Contains(c.Id))
-                .ToDictionaryAsync(c => c.Id, c => c.Exist);
-
-            foreach (var systemObject in currentLevel)
-            {
-                systemObject.HasChildren = children[systemObject.Id];
-            }
-            //var res = await currentLevel.ToDataSourceResultAsync(request);
-            return await currentLevel.ToDataSourceResultAsync(request);
-        }
-
-        public ActionResult<DataSourceResult> ScanRequest_Read([DataSourceRequest] DataSourceRequest request)
-        {
-            var res = _scanRequestService.GetAllAsync().Result;
+            var res = _scanRequestService.GetAllBySiteIdAsync(siteId).Result;
             return res.ToDataSourceResult(request);
         }
-        public IActionResult Scan()
+        public IActionResult Scan([FromQuery] Guid siteId)
         {
-            var sc = _siteConfigurationService.GetSiteConfiguration();
+            var sc = _siteConfigurationService.GetSiteConfiguration(siteId);
 
             _scanRequestService.Scan(ScanRequestDto.Create(sc.SiteId)).Wait();
             return View("Index");
