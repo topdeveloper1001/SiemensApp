@@ -83,7 +83,7 @@ namespace SiemensApp
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, IDbUpgradeChecker dbUpgradeChecker)
         {
-            dbUpgradeChecker.EnsureDatabaseUpToDate(env);
+            //dbUpgradeChecker.EnsureDatabaseUpToDate(env);
             app.UseHealthChecks("/healthcheck", new HealthCheckOptions
             {
                 Predicate = _ => true,

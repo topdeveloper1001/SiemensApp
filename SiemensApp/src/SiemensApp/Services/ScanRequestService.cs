@@ -388,6 +388,10 @@ namespace SiemensApp.Services
 
             foreach (var dataItem in items)
             {
+                if(linkType == LinkType.Properties)
+                {
+
+                }
                 var dbEntity = new SystemObjectEntity
                 {
                     ParentId = parentSystemObjectId,

@@ -30,8 +30,7 @@ CREATE TABLE [dbo].[SystemObjects](
 	[ObjectId] [varchar](max) NULL,
 	[Attributes] [varchar](max) NULL,
 	[Properties] [varchar](max) NULL,
-	[FunctionProperties] [varchar](max) NULL,
-	[SiteId] [uniqueidentifier] NULL,
+	[FunctionProperties] [varchar](max) NULL
  CONSTRAINT [PK_SystemObjects] PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC
