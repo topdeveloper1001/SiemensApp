@@ -27,7 +27,7 @@ namespace SiemensApp.Test.Controllers.Airports
             using (var client = server.CreateClient())
             {
                 var siteConfiguration = Fixture.Build<SiteConfigurationDto>().Create();
-                var response = await client.PostAsJsonAsync("siteConfiguration/create", siteConfiguration);
+                var response = await client.PostAsJsonAsync("api/siteConfiguration/create", siteConfiguration);
 
                 response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
@@ -54,7 +54,7 @@ namespace SiemensApp.Test.Controllers.Airports
                 var creatingSiteConfiguration = Fixture.Build<SiteConfigurationDto>()
                                                        .With(sc => sc.SiteId, siteId)
                                                        .Create();
-                var response = await client.PostAsJsonAsync("siteConfiguration/create", creatingSiteConfiguration);
+                var response = await client.PostAsJsonAsync("api/siteConfiguration/create", creatingSiteConfiguration);
 
                 response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             }
