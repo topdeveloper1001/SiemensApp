@@ -1,6 +1,6 @@
 ﻿@using Kendo.Mvc.UI
 @{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "System Object Page";
 }
 <div style="width: 100%; height: 40px; background-color: black" class="text-center mt-3 mb-3">
     <img src="~/images/willow-logo.svg" style="height: 100%" />
@@ -23,7 +23,8 @@
             .Field("id", typeof(int?))
             .Field("attributes", typeof(string))
           )
-          .Read(read => read.Action("ReadData", "Home", new { siteId = "F05D307B-8D33-4DB3-B20D-7F2A844BEF90" }))
+          //.Read(read => read.Action("ReadData", "SystemObject", new { siteId = "F05D307B-8D33-4DB3-B20D-7F2A844BEF90" }))
+          .Read(read => read.Action("ReadData", "SystemObject"))
           .Custom()
           .Schema(b => b.Data("data").Total("total"))
           )

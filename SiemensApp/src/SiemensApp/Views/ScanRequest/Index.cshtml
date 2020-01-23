@@ -45,7 +45,7 @@
                                 .Schema(schema => schema.Model(m => m.Id("id")).Data("data").Total("total"))
                                 .Transport(transport =>
                                 {
-                                    transport.Read(read => read.Action("ScanRequest_Read", "ScanRequest", new { siteId = "F05D307B-8D33-4DB3-B20D-7F2A844BEF90" }));
+                                    transport.Read(read => read.Action("ScanRequest_Read", "ScanRequest"));
                                 }
                                 )
                             )
@@ -66,6 +66,7 @@
         }
     }
     function scan() {
-        window.location.href = "/ScanRequest/Scan?siteId=" + "F05D307B-8D33-4DB3-B20D-7F2A844BEF90";
+        //window.location.href = "/ScanRequest/Scan?siteId=" + "F05D307B-8D33-4DB3-B20D-7F2A844BEF90";
+        window.location.href = "/ScanRequest/Scan";
     }
 </script>

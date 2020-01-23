@@ -12,6 +12,7 @@ namespace SiemensApp.Services
     public interface ISiteConfigurationService
     {
         Task CreateSiteConfiguration(SiteConfiguration siteConfiguration);
+        Task<SiteConfiguration> SaveSiteConfiguration(SiteConfiguration siteConfiguration);
         SiteConfiguration GetSiteConfiguration(Guid siteId);
         SiteConfiguration GetSiteConfiguration();
     }
@@ -51,6 +52,27 @@ namespace SiemensApp.Services
             if (siteconfiguration == null)
                 throw new BadRequestException("SiteConfiguration does not exist");
             return SiteConfigurationEntity.MapTo(siteconfiguration);
+        }
+
+        public async Task<SiteConfiguration> SaveSiteConfiguration(SiteConfiguration siteConfiguration)
+        {
+            var passwordBytes = Encoding.UTF8.GetBytes(siteConfiguration.Password);
+            siteConfiguration.Password = Convert.ToBase64String(passwordBytes);
+            var entity = SiteConfigurationEntity.MapFrom(siteConfiguration);
+            if (_dbContext.SiteConfigurations.Any(sc => sc.SiteId == siteConfiguration.SiteId))
+            {
+                _dbContext.Entry(entity).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+            }
+            else
+            {
+                _dbContext.SiteConfigurations.Add(entity);
+            }
+
+            
+            await _dbContext.SaveChangesAsync();
+
+            return SiteConfigurationEntity.MapTo(entity);
+
         }
     }
 }

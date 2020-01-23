@@ -15,6 +15,7 @@ using Newtonsoft.Json.Serialization;
 using SiemensApp.Database;
 using SiemensApp.Domain;
 using SiemensApp.Entities;
+using SiemensApp.Filters;
 using SiemensApp.Infrastructure.Queue;
 using SiemensApp.Services;
 using System.IO;
@@ -61,7 +62,9 @@ namespace SiemensApp
             services.AddJwtAuthentication(Configuration["Auth0:Domain"], Configuration["Auth0:Audience"], _env);
             var connectionString = Configuration.GetConnectionString("SiemensDb");
             AddDbContexts(services, connectionString);
-            //services.AddSingleton<IDbUpgradeChecker, DbUpgradeChecker>();
+
+            services.AddScoped<SiemensActionFilter>();
+            services.AddScoped<SiemensAsyncActionFilter>();
 
             services
                 .AddHealthChecks()
@@ -112,12 +115,11 @@ namespace SiemensApp
                 app.UseHsts();
             }
             app.UseCookiePolicy();
-
             app.UseMvc(routes =>
             {
                 routes.MapRoute(
                     name: "default",
-                    template: "{controller=Home}/{action=Index}/{id?}");
+                    template: "{controller=SiteConfiguration}/{action=Index}/{id?}");
             });
         }
     }

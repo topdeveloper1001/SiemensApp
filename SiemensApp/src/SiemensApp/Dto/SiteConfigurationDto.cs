@@ -34,5 +34,21 @@ namespace SiemensApp.Dto
                 MaxThreads = model.MaxThreads.HasValue ? model.MaxThreads.Value : 0
             };
         }
+
+        public static SiteConfigurationDto MapFrom(SiteConfiguration sc)
+        {
+            if (sc == null)
+                return null;
+
+            return new SiteConfigurationDto()
+            {
+                SiteId = sc.SiteId,
+                Url = sc.Url,
+                UserName = sc.UserName,
+                Password = sc.Password,
+                Status = sc.Status,
+                MaxThreads = sc.MaxThreads
+            };
+        }
     }
 }

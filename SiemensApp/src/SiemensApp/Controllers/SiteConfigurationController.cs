@@ -5,16 +5,19 @@ using System.Linq;
 using System.Threading.Tasks;
 using Kendo.Mvc.Extensions;
 using Kendo.Mvc.UI;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SiemensApp.Domain;
 using SiemensApp.Dto;
 using SiemensApp.Entities;
+using SiemensApp.Filters;
 using SiemensApp.Services;
 
 namespace SiemensApp.Controllers
 {
+    [ServiceFilter(typeof(SiemensActionFilter))]
     public class SiteConfigurationController : Controller
     {
         private readonly SiemensDbContext _context;
@@ -28,15 +31,17 @@ namespace SiemensApp.Controllers
             _logger = logger;
         }
 
-        public IActionResult Index([FromQuery(Name = "siteId")] Guid siteId)
+        public IActionResult Index([FromQuery(Name = "siteId")] Guid? siteId)
         {
-            return View(SiteConfigurationDto.Create(siteId));
+            return View(SiteConfigurationDto.Create(siteId.Value));
         }
 
         [HttpPost]
-        public IActionResult Save(SiteConfigurationDto dto)
+        public async Task<IActionResult> Save(SiteConfigurationDto dto, [FromQuery(Name = "siteId")] Guid siteId)
         {
-            return View("Index", dto);
+            var res = await _siteConfigurationService.SaveSiteConfiguration(SiteConfigurationDto.MapTo(dto));
+
+            return View("Index", SiteConfigurationDto.MapFrom(res));
         }
 
         

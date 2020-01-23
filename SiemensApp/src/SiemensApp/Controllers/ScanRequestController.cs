@@ -11,10 +11,12 @@ using Microsoft.Extensions.Logging;
 using SiemensApp.Domain;
 using SiemensApp.Dto;
 using SiemensApp.Entities;
+using SiemensApp.Filters;
 using SiemensApp.Services;
 
 namespace SiemensApp.Controllers
 {
+    [ServiceFilter(typeof(SiemensActionFilter))]
     public class ScanRequestController : Controller
     {
         private readonly SiemensDbContext _context;
@@ -29,7 +31,7 @@ namespace SiemensApp.Controllers
             _logger = logger;
         }
 
-        public IActionResult Index()
+        public IActionResult Index([FromQuery(Name = "siteId")] Guid siteId)
         {
             return View();
         }

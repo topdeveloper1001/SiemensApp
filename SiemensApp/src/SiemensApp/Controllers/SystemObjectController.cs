@@ -10,29 +10,31 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SiemensApp.Domain;
 using SiemensApp.Entities;
+using SiemensApp.Filters;
 using SiemensApp.Services;
 
 namespace SiemensApp.Controllers
 {
-    public class HomeController : Controller
+    [ServiceFilter(typeof(SiemensActionFilter))]
+    public class SystemObjectController : Controller
     {
         private readonly SiemensDbContext _context;
         private readonly IScanRequestService _scanRequestService;
-        private readonly ILogger<HomeController> _logger;
+        private readonly ILogger<SystemObjectController> _logger;
 
-        public HomeController(SiemensDbContext context, IScanRequestService scanRequestService, ILogger<HomeController> logger)
+        public SystemObjectController(SiemensDbContext context, IScanRequestService scanRequestService, ILogger<SystemObjectController> logger)
         {
             _context = context;
             _scanRequestService = scanRequestService;
             _logger = logger;
         }
 
-        public IActionResult Index()
+        public IActionResult Index([FromQuery(Name = "siteId")] Guid siteId)
         {
             return View();
         }
 
-        public async Task<IActionResult> Import()
+        public async Task<IActionResult> Import([FromQuery(Name = "siteId")] Guid siteId)
         {
             try
             {
@@ -58,18 +60,18 @@ namespace SiemensApp.Controllers
             {
                 systemObject.HasChildren = children[systemObject.Id];
             }
-            //var res = await currentLevel.ToDataSourceResultAsync(request);
+            
             return await currentLevel.ToDataSourceResultAsync(request);
         }
 
         [HttpGet("/api/propertyValues/{objectId}/{propertyId?}")]
-        public async Task<ActionResult<PropertyValueResponse>> GetValue([FromRoute] string objectId, [FromRoute] string propertyId)
+        public async Task<ActionResult<PropertyValueResponse>> GetValue([FromRoute] string objectId, [FromRoute] string propertyId, [FromQuery(Name = "siteId")] Guid siteId)
         {
             return await _scanRequestService.GetPropertyValueAsync(objectId, propertyId);
         }
 
         [HttpGet("/api/csvExport")]
-        public async Task<IActionResult> GetCsvExport()
+        public async Task<IActionResult> GetCsvExport([FromQuery(Name = "siteId")] Guid siteId)
         {
             var filePath = await _scanRequestService.ExportDataCsv();
 
