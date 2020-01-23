@@ -66,7 +66,7 @@
         }
     }
     function scan() {
-        //window.location.href = "/ScanRequest/Scan?siteId=" + "F05D307B-8D33-4DB3-B20D-7F2A844BEF90";
-        window.location.href = "/ScanRequest/Scan";
+        let siteId = "@ViewData["siteId"]";
+        window.location.href = `/ScanRequest/Scan?siteId=${siteId}`;
     }
 </script>

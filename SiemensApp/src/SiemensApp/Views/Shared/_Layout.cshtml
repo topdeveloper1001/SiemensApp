@@ -33,13 +33,13 @@
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
                             @*<a class="nav-link text-dark" asp-area="" asp-controller="SiteConfiguration" asp-action="Index" asp-route-siteId="F05D307B-8D33-4DB3-B20D-7F2A844BEF90">Site Configuration</a>*@
-                            <a class="nav-link text-dark" asp-area="" asp-controller="SiteConfiguration" asp-action="Index">Site Configuration</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="SiteConfiguration" asp-action="Index" asp-route-siteId="@ViewData["siteId"]">Site Configuration</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="SystemObject" asp-action="Index">System Objects</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="SystemObject" asp-action="Index" asp-route-siteId="@ViewData["siteId"]">System Objects</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="ScanRequest" asp-action="Index">Scan Requests</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="ScanRequest" asp-action="Index" asp-route-siteId="@ViewData["siteId"]">Scan Requests</a>
                         </li>
 
                         @*<li class="nav-item">

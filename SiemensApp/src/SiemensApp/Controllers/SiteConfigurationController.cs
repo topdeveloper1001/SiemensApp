@@ -33,7 +33,12 @@ namespace SiemensApp.Controllers
 
         public IActionResult Index([FromQuery(Name = "siteId")] Guid? siteId)
         {
-            return View(SiteConfigurationDto.Create(siteId.Value));
+            var config = _siteConfigurationService.GetSiteConfiguration(siteId.Value);
+            var configDto = config == null
+                ? SiteConfigurationDto.Create(siteId.Value)
+                : SiteConfigurationDto.MapFrom(config);
+
+            return View(configDto);
         }
 
         [HttpPost]

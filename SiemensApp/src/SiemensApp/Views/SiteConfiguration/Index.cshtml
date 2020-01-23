@@ -10,7 +10,7 @@
 </div>
 
 <div class="row col-sm-8">
-    @using (Html.BeginForm("Save", "SiteConfiguration"))
+    @using (Html.BeginForm("Save", "SiteConfiguration", new {siteId = ViewData["siteId"]}))
     {
         @Html.AntiForgeryToken()
         @Html.ValidationSummary(true, "", new { @class = "text-danger" })
@@ -59,6 +59,7 @@
         }
     }
     function scan() {
-        window.location.href = "/ScanRequest/Scan";
+        let siteId = "@ViewData["siteId"]";
+        window.location.href = `/ScanRequest/Scan?siteId=${siteId}`;
     }
 </script>

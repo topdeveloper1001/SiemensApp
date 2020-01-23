@@ -11,20 +11,21 @@ namespace SiemensApp.Filters
     {
         public void OnActionExecuting(ActionExecutingContext context)
         {
-            bool isValidate = false;
-            foreach(var arg in context.ActionArguments)
+            var siteIdStr = context.HttpContext.Request.Query["siteId"].FirstOrDefault();
+            var siteId = Guid.TryParse(siteIdStr, out var s) ? s : Guid.Empty;
+            if (siteId == Guid.Empty)
             {
-                if(arg.Key.ToLower() == "siteid" && arg.Value != null)
-                {                    
-                    isValidate = true;
-                    break;
-                }
+                context.Result = new RedirectResult("~/Error/Index");
+                return;
             }
-            if(!isValidate)
+
+            var controller = context.Controller as Controller;
+            if (controller == null)
             {
-                context.Result = new RedirectResult("~/Error/Index");                
+                return;
             }
-            // our code before action executes
+
+            controller.ViewData["siteId"] = siteId;
         }
         
         public void OnActionExecuted(ActionExecutedContext context)

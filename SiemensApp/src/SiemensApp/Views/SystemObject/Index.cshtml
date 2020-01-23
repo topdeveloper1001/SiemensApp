@@ -64,6 +64,7 @@
 <script type="text/javascript">
     
     function exportcsv() {
-        window.location.href = "/api/csvExport";
+        let siteId = "@ViewData["siteId"]";
+        window.location.href = `/api/csvExport?siteId=${siteId}`;
     }
 </script>
