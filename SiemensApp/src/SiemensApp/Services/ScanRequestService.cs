@@ -353,7 +353,7 @@ namespace SiemensApp.Services
                     var lt = dataItemLink.Rel.Trim().ToLower() == "systembrowser"
                         ? LinkType.Systembrowser
                         : LinkType.Properties;
-                    dataItem.ChildrenItems.AddRange(ImportRecursive(client, dataItemLink.Href, lt, dbEntity.Id));
+                    dataItem.ChildrenItems.AddRange(ImportRecursive(client, dataItemLink.Href, lt, dbEntity.Id, dbEntity));
                 }
                 ProcessingCount++;
                 scanRequest.NumberOfPoints = ProcessingCount;
@@ -370,7 +370,7 @@ namespace SiemensApp.Services
             return items;
             
         }
-        private List<DataItem> ImportRecursive(HttpClient client, string url, LinkType linkType, int? parentSystemObjectId)
+        private List<DataItem> ImportRecursive(HttpClient client, string url, LinkType linkType, int? parentSystemObjectId, SystemObjectEntity parentSystemObject)
         {
             var data = client.GetAsync(url).Result;
             if (!data.IsSuccessStatusCode)
@@ -386,12 +386,17 @@ namespace SiemensApp.Services
                 ? JsonConvert.DeserializeObject<List<DataItem>>(strData)
                 : new List<DataItem> { JsonConvert.DeserializeObject<DataItem>(strData) };
 
+            if(linkType == LinkType.Properties && parentSystemObject != null)
+            {
+                var dataItem = items.First();
+                parentSystemObject.Properties = dataItem.Properties?.ToString();
+                parentSystemObject.FunctionProperties = dataItem.FunctionProperties?.ToString();
+                return new List<DataItem>();
+            }
+
             foreach (var dataItem in items)
             {
-                if(linkType == LinkType.Properties)
-                {
-
-                }
+                
                 var dbEntity = new SystemObjectEntity
                 {
                     ParentId = parentSystemObjectId,
@@ -415,7 +420,7 @@ namespace SiemensApp.Services
                     var lt = dataItemLink.Rel.Trim().ToLower() == "systembrowser"
                         ? LinkType.Systembrowser
                         : LinkType.Properties;
-                    dataItem.ChildrenItems.AddRange(ImportRecursive(client, dataItemLink.Href, lt, dbEntity.Id));
+                    dataItem.ChildrenItems.AddRange(ImportRecursive(client, dataItemLink.Href, lt, dbEntity.Id, dbEntity));
                 }
             }
 
