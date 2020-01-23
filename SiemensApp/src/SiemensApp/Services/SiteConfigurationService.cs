@@ -42,8 +42,6 @@ namespace SiemensApp.Services
         public SiteConfiguration GetSiteConfiguration(Guid siteId)
         {
             var siteconfiguration = _dbContext.SiteConfigurations.FirstOrDefault(sc => sc.SiteId == siteId);
-            if(siteconfiguration == null)
-                throw new BadRequestException("SiteConfiguration does not exist");
             return SiteConfigurationEntity.MapTo(siteconfiguration);
         }
         public SiteConfiguration GetSiteConfiguration()
