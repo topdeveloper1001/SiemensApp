@@ -107,7 +107,7 @@ namespace SiemensApp.Services
         }
         private async Task<List<DataItem>> DoWorkScan(ScanRequest scanRequest, SiteConfiguration siteConfiguration)
         {
-            var startUrl = "API/systembrowser";
+            var startUrl = "API/api/systembrowser";
             
             using (var client = _httpClientFactory.CreateClient())
             {
@@ -373,7 +373,9 @@ namespace SiemensApp.Services
                     var lt = dataItemLink.Rel.Trim().ToLower() == "systembrowser"
                         ? LinkType.Systembrowser
                         : LinkType.Properties;
-                    dataItem.ChildrenItems.AddRange(ImportRecursive(client, dataItemLink.Href, lt, dbEntity.Id, dbEntity, siteConfiguration.MaxThreads, scanRequest));
+
+                    dataItem.ChildrenItems.AddRange(ImportRecursive(client, "api/" + dataItemLink.Href, lt, dbEntity.Id, dbEntity, siteConfiguration.MaxThreads, scanRequest));
+
                 }
                 ProcessingCount++;
                 scanRequest.NumberOfPoints = ProcessingCount;
@@ -441,7 +443,8 @@ namespace SiemensApp.Services
                     var lt = dataItemLink.Rel.Trim().ToLower() == "systembrowser"
                         ? LinkType.Systembrowser
                         : LinkType.Properties;
-                    dataItem.ChildrenItems.AddRange(ImportRecursive(client, dataItemLink.Href, lt, dbEntity.Id, dbEntity, 1, scanRequest));
+
+                    dataItem.ChildrenItems.AddRange(ImportRecursive(client, "api/" + dataItemLink.Href, lt, dbEntity.Id, dbEntity, 1, scanRequest));
                 }
 
                 ProcessingCount++;
