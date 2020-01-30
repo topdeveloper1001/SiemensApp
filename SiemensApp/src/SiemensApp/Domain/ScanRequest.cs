@@ -20,6 +20,7 @@ namespace SiemensApp.Domain
     {
         Requested = 0,
         Running = 1,
-        Completed = 2
+        Completed = 2,
+        Failed = 3
     }
 }

@@ -96,9 +96,19 @@ namespace SiemensApp.Services
         public async Task Scan(ScanRequest scanRequest)
         {
             SiteId = scanRequest.SiteId;
-            var siteConfiguration = _siteConfigurationService.GetSiteConfiguration(scanRequest.SiteId);
             scanRequest.Id = await CreateScanRequest(scanRequest);
+            var siteConfiguration = _siteConfigurationService.GetSiteConfiguration(scanRequest.SiteId);
+
+            _taskQueue.QueueBackgroundWorkItem(async action =>
+            {
+                var topLevelItems = await DoWorkScan(scanRequest, siteConfiguration);
+            });
+            
+        }
+        private async Task<List<DataItem>> DoWorkScan(ScanRequest scanRequest, SiteConfiguration siteConfiguration)
+        {
             var startUrl = "API/systembrowser";
+            
             using (var client = _httpClientFactory.CreateClient())
             {
                 var token = _apiTokenProvider.GetTokenAsync(AuthenticationOptions.Create(siteConfiguration)).Result;
@@ -108,14 +118,25 @@ namespace SiemensApp.Services
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
+                scanRequest.Status = ScanRequestStatus.Running;
+                scanRequest.StartTime = DateTime.UtcNow;
+                await UpdateScanRequestInMultiThread(scanRequest);
 
-                _taskQueue.QueueBackgroundWorkItem(async action =>
+                List<DataItem> topLevelItems = null;
+                try
                 {
-                    var topLevelItems = await StartScan(client, startUrl, LinkType.Systembrowser, siteConfiguration, scanRequest);
-                });
+                    topLevelItems = await StartScan(client, startUrl, LinkType.Systembrowser, siteConfiguration, scanRequest);
+                }
+                catch(Exception ex)
+                {
+                    _logger.LogWarning($"Failed to run {siteConfiguration.SiteId}. Exception Message: {ex.Message}");
+                    scanRequest.Status = ScanRequestStatus.Failed;
+                    scanRequest.EndTime = DateTime.UtcNow;
+                    await UpdateScanRequestInMultiThread(scanRequest);
+                }
+                return topLevelItems;
             }
         }
-
         private List<SystemObjectEntity> GetDbItemsRecursively(DataItem item, SystemObjectEntity parent = null)
         {
             var sObject = Map(item);
@@ -300,9 +321,6 @@ namespace SiemensApp.Services
         }
         private async Task<List<DataItem>> StartScan(HttpClient client, string url, LinkType linkType, SiteConfiguration siteConfiguration, ScanRequest scanRequest)
         {
-            scanRequest.Status = ScanRequestStatus.Running;
-            scanRequest.StartTime = DateTime.UtcNow;
-            await UpdateScanRequestInMultiThread(scanRequest);
             var data = await client.GetAsync(url);
             _logger.LogInformation("Started");
             if (!data.IsSuccessStatusCode)
