@@ -326,7 +326,8 @@ namespace SiemensApp.Services
             if (!data.IsSuccessStatusCode)
             {
                 _logger.LogWarning("Failed to invoke {statusCode} {url}", data.StatusCode, url);
-                return new List<DataItem>();
+                throw new Exception($"Failed to invoke {data.StatusCode} {url}");
+                //return new List<DataItem>();
             }
             var strData = await data.Content.ReadAsStringAsync();
             strData = strData.Trim();
@@ -346,7 +347,8 @@ namespace SiemensApp.Services
 
             //---------------------------------
 
-            Parallel.ForEach(items, new ParallelOptions { MaxDegreeOfParallelism = siteConfiguration.MaxThreads }, dataItem =>
+            
+            foreach(var dataItem in items)
             {
                 var dbEntity = new SystemObjectEntity
                 {
@@ -371,14 +373,14 @@ namespace SiemensApp.Services
                     var lt = dataItemLink.Rel.Trim().ToLower() == "systembrowser"
                         ? LinkType.Systembrowser
                         : LinkType.Properties;
-                    dataItem.ChildrenItems.AddRange(ImportRecursive(client, dataItemLink.Href, lt, dbEntity.Id, dbEntity));
+                    dataItem.ChildrenItems.AddRange(ImportRecursive(client, dataItemLink.Href, lt, dbEntity.Id, dbEntity, siteConfiguration.MaxThreads, scanRequest));
                 }
                 ProcessingCount++;
                 scanRequest.NumberOfPoints = ProcessingCount;
                 UpdateScanRequestInMultiThread(scanRequest).Wait();
                 _logger.LogInformation($"Processing Count : {ProcessingCount}");
-                Thread.Sleep(1000);
-            });
+                
+            }
 
             scanRequest.Status = ScanRequestStatus.Completed;
             scanRequest.EndTime = DateTime.UtcNow;
@@ -388,13 +390,14 @@ namespace SiemensApp.Services
             return items;
             
         }
-        private List<DataItem> ImportRecursive(HttpClient client, string url, LinkType linkType, int? parentSystemObjectId, SystemObjectEntity parentSystemObject)
+        private List<DataItem> ImportRecursive(HttpClient client, string url, LinkType linkType, int? parentSystemObjectId, SystemObjectEntity parentSystemObject, int MaxThreads, ScanRequest scanRequest)
         {
             var data = client.GetAsync(url).Result;
             if (!data.IsSuccessStatusCode)
             {
                 _logger.LogWarning("Failed to invoke {statusCode} {url}", data.StatusCode, url);
-                return new List<DataItem>();
+                throw new Exception($"Failed to invoke {data.StatusCode} {url}");
+                //return new List<DataItem>();
             }
             var strData = data.Content.ReadAsStringAsync().Result;
             strData = strData.Trim();
@@ -412,9 +415,9 @@ namespace SiemensApp.Services
                 return new List<DataItem>();
             }
 
-            foreach (var dataItem in items)
+            Parallel.ForEach(items, new ParallelOptions { MaxDegreeOfParallelism = MaxThreads }, dataItem =>
             {
-                
+
                 var dbEntity = new SystemObjectEntity
                 {
                     ParentId = parentSystemObjectId,
@@ -438,9 +441,17 @@ namespace SiemensApp.Services
                     var lt = dataItemLink.Rel.Trim().ToLower() == "systembrowser"
                         ? LinkType.Systembrowser
                         : LinkType.Properties;
-                    dataItem.ChildrenItems.AddRange(ImportRecursive(client, dataItemLink.Href, lt, dbEntity.Id, dbEntity));
+                    dataItem.ChildrenItems.AddRange(ImportRecursive(client, dataItemLink.Href, lt, dbEntity.Id, dbEntity, 1, scanRequest));
                 }
-            }
+
+                ProcessingCount++;
+                if (MaxThreads > 1)
+                {
+                    scanRequest.NumberOfPoints = ProcessingCount;
+                    UpdateScanRequestInMultiThread(scanRequest).Wait();
+                    _logger.LogInformation($"Processing Count : {ProcessingCount}");
+                }
+            });
 
             return items;
         }

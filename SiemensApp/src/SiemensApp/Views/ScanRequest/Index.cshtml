@@ -45,7 +45,7 @@
                                 .Schema(schema => schema.Model(m => m.Id("id")).Data("data").Total("total"))
                                 .Transport(transport =>
                                 {
-                                    transport.Read(read => read.Action("ScanRequest_Read", "ScanRequest"));
+                                    transport.Read(read => read.Action("ScanRequest_Read", "ScanRequest", new { siteId = ViewData["siteId"] }));
                                 }
                                 )
                             )

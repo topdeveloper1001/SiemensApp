@@ -47,7 +47,7 @@ namespace SiemensApp.Services
         }
         private async Task Create(SiemensDbContext context, SystemObjectEntity SystemObject)
         {
-            var existing = context.SystemObjects.FirstOrDefault(x => x.ObjectId == SystemObject.ObjectId && x.Name == SystemObject.Name && x.Designation == SystemObject.Designation);
+            var existing = context.SystemObjects.FirstOrDefault(x =>x.SiteId == SystemObject.SiteId && x.ObjectId == SystemObject.ObjectId && x.Name == SystemObject.Name && x.Designation == SystemObject.Designation);
             if (existing != null)
             {
                 SystemObject.Id = existing.Id;
