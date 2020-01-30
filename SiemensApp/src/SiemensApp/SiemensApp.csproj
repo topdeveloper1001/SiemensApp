@@ -11,10 +11,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Database\Scripts\001_Add_SiteId_In_SystemObjects.sql" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Include="wwwroot\configuration.html" />
   </ItemGroup>
 
