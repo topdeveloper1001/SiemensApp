@@ -33,8 +33,7 @@ namespace SiemensApp.Services
             if (_dbContext.SiteConfigurations.Any(sc => sc.SiteId == siteConfiguration.SiteId))
                 throw new BadRequestException("SiteConfiguration already exists");
 
-            var passwordBytes = Encoding.UTF8.GetBytes(siteConfiguration.Password);
-            siteConfiguration.Password = Convert.ToBase64String(passwordBytes);
+            siteConfiguration.Password = Encode(siteConfiguration.Password);
             _dbContext.SiteConfigurations.Add(SiteConfigurationEntity.MapFrom(siteConfiguration));
             await _dbContext.SaveChangesAsync();
         }
@@ -42,11 +41,21 @@ namespace SiemensApp.Services
         public SiteConfiguration GetSiteConfiguration(Guid siteId)
         {
             var siteconfiguration = _dbContext.SiteConfigurations.FirstOrDefault(sc => sc.SiteId == siteId);
+            if (siteconfiguration != null)
+            {
+                siteconfiguration.Password = Decode(siteconfiguration.Password);
+            }
+
             return SiteConfigurationEntity.MapTo(siteconfiguration);
         }
         public SiteConfiguration GetSiteConfiguration()
         {
             var siteconfiguration = _dbContext.SiteConfigurations.FirstOrDefault();
+            if (siteconfiguration != null)
+            {
+                siteconfiguration.Password = Decode(siteconfiguration.Password);
+            }
+            
             if (siteconfiguration == null)
                 throw new BadRequestException("SiteConfiguration does not exist");
             return SiteConfigurationEntity.MapTo(siteconfiguration);
@@ -54,8 +63,7 @@ namespace SiemensApp.Services
 
         public async Task<SiteConfiguration> SaveSiteConfiguration(SiteConfiguration siteConfiguration)
         {
-            var passwordBytes = Encoding.UTF8.GetBytes(siteConfiguration.Password);
-            siteConfiguration.Password = Convert.ToBase64String(passwordBytes);
+            siteConfiguration.Password = Encode(siteConfiguration.Password);
             var entity = SiteConfigurationEntity.MapFrom(siteConfiguration);
             if (_dbContext.SiteConfigurations.Any(sc => sc.SiteId == siteConfiguration.SiteId))
             {
@@ -71,6 +79,16 @@ namespace SiemensApp.Services
 
             return SiteConfigurationEntity.MapTo(entity);
 
+        }
+
+        private string Encode(string source)
+        {
+            return Convert.ToBase64String(Encoding.UTF8.GetBytes(source));
+        }
+
+        private string Decode(string source)
+        {
+            return Encoding.UTF8.GetString(Convert.FromBase64String(source));
         }
     }
 }
