@@ -15,6 +15,7 @@ namespace SiemensApp.Entities
 
         public DbSet<SiteConfigurationEntity> SiteConfigurations { get; set; }
         public DbSet<ScanRequestEntity> ScanRequests { get; set; }
+        public DbSet<PropertyEntity> Properties { get; set; }
         public DbSet<SystemObjectEntity> SystemObjects { get; set; }
         public DbQuery<ChildrenExistResult> ChildrenObjects { get; set; }
 

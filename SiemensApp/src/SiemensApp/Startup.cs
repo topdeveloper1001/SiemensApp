@@ -50,6 +50,7 @@ namespace SiemensApp
             services.AddApiServices(Configuration, _env);
             services.Configure<AppSettings>(Configuration.GetSection(nameof(AppSettings)));
             services.AddScoped<ISiteConfigurationService, SiteConfigurationService>();
+            services.AddScoped<IPropertyService, PropertyService>();
             services.AddScoped<ISystemObjectService, SystemObjectService>();
             services.AddScoped<IScanRequestService, ScanRequestService>();
             services.AddMemoryCache();

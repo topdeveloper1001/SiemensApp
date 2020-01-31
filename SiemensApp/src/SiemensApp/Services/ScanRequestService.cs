@@ -326,8 +326,8 @@ namespace SiemensApp.Services
             if (!data.IsSuccessStatusCode)
             {
                 _logger.LogWarning("Failed to invoke {statusCode} {url}", data.StatusCode, url);
-                throw new Exception($"Failed to invoke {data.StatusCode} {url}");
-                //return new List<DataItem>();
+                //throw new Exception($"Failed to invoke {data.StatusCode} {url}");
+                return new List<DataItem>();
             }
             var strData = await data.Content.ReadAsStringAsync();
             strData = strData.Trim();
@@ -398,8 +398,8 @@ namespace SiemensApp.Services
             if (!data.IsSuccessStatusCode)
             {
                 _logger.LogWarning("Failed to invoke {statusCode} {url}", data.StatusCode, url);
-                throw new Exception($"Failed to invoke {data.StatusCode} {url}");
-                //return new List<DataItem>();
+                //throw new Exception($"Failed to invoke {data.StatusCode} {url}");
+                return new List<DataItem>();
             }
             var strData = data.Content.ReadAsStringAsync().Result;
             strData = strData.Trim();

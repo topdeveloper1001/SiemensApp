@@ -1,0 +1,108 @@
+﻿@using Kendo.Mvc.UI
+@{
+    ViewData["Title"] = "Property Page";
+}
+<div style="width: 100%; height: 40px; background-color: black" class="text-center mt-3 mb-3">
+    <img src="~/images/willow-logo.svg" style="height: 100%" />
+</div>
+<div class="text-center">
+    <h1 class="display-4">Willow + Desigo CC - Properties</h1>
+</div>
+
+<div class="row">
+    @(Html.Kendo().TabStrip()
+                    .Name("tabstrip")
+                    .TabPosition(TabStripTabPosition.Bottom)
+                    .Collapsible(true)
+                    .Navigatable(false)
+                    .Animation(animation =>
+                    {
+                        animation.Open(config =>
+                        {
+                            config.Fade(FadeDirection.In);
+                        });
+                    })
+                    .Items(items =>
+                    {
+                        items.Add().Text("Properties")
+                        .Selected(true)
+                            .Content(@<text>
+                                @(Html.Kendo().Grid<SiemensApp.Domain.Property>()
+                                                .Name("gridProperties")
+                                                .Columns(columns =>
+                                                {
+                                                    columns.Bound("name").Width(150);
+                                                    columns.Command(commands =>
+                                                    {
+                                                        commands.Destroy(); // The "destroy" command removes data items.
+                                                    }).Title("Commands").Width(30);
+
+
+                                                })
+                                                .ToolBar(toolbar =>
+                                                {
+                                                    toolbar.Create(); // The "create" command adds new data items.
+                                                    toolbar.Save(); // The "save" command saves the changed data items.
+
+                                                })
+                                                .Editable(editable => editable.Mode(GridEditMode.InCell)) // Use in-cell editing mode.
+                                                .Sortable()
+                                                .Scrollable()
+                                                .DataSource(dataSource => dataSource
+                                                    .Custom()
+                                                    .Batch(true)
+                                                    .Schema(schema => schema.Model(m => {
+                                                        m.Id(p => p.Id);
+                                                        m.Field(p => p.Id);
+                                                        m.Field(p => p.SiteId);
+                                                        m.Field(p => p.Name);
+                                                        m.Field(p => p.IsFunctionProperty);
+
+                                                    }).Data("data").Total("total"))
+                                                    .Transport(transport =>
+                                                    {
+                                                        transport.Read(read => read.Action("Property_Read", "Property", new { siteId = ViewData["siteId"] }));
+                                                        transport.Create(create => create.Action("Property_Create", "Property", new { siteId = ViewData["siteId"] }));
+                                                        transport.Update(update => update.Action("Property_Update", "Property", new { siteId = ViewData["siteId"] }));
+                                                        transport.Destroy(destroy => destroy.Action("Property_Destroy", "Property", new { siteId = ViewData["siteId"] }));
+                                                        transport.ParameterMap("parameterMap");
+                                                    }
+                                                    )
+                                                )
+                                )
+                            </text>);
+
+                                            items.Add().Text("Two")
+                                    .Content(@<text>
+                                        <p>Mauris pulvinar molestie accumsan.</p>
+                                    </text>);
+                                                            })
+    )
+
+
+
+</div>
+<script type="text/javascript">
+    function error_handler(e) {
+        if (e.errors) {
+            var message = "Errors:\n";
+            $.each(e.errors, function (key, value) {
+                if ('errors' in value) {
+                    $.each(value.errors, function() {
+                        message += this + "\n";
+                    });
+                }
+            });
+            alert(message);
+        }
+    }
+    function scan() {
+        let siteId = "@ViewData["siteId"]";
+        window.location.href = `/Property/Scan?siteId=${siteId}`;
+    }
+    function parameterMap(options, operation) {
+        if (operation !== "read" && options.models) {
+            return { models: kendo.stringify(options.models) };
+        }
+    }
+</script>
