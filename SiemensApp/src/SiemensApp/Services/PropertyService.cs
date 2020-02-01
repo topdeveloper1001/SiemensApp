@@ -12,9 +12,9 @@ namespace SiemensApp.Services
 {
     public interface IPropertyService
     {
-        Task CreateProperty(Property property);
-        Task<Property> SaveProperty(Property property);
-        Task DeleteProperty(int propertyId);
+        Task<Property> CreatePropertyAsync(Property property);
+        Task<Property> SavePropertyAsync(Property property);
+        Task DeletePropertyAsync(int propertyId);
         List<Property> GetProperties(Guid siteId, bool isFunctionProperty);
     }
 
@@ -29,20 +29,22 @@ namespace SiemensApp.Services
             _logger = logger;
         }
 
-        public async Task CreateProperty(Property property)
+        public async Task<Property> CreatePropertyAsync(Property property)
         {
-            _dbContext.Properties.Add(PropertyEntity.MapFrom(property));
+            var entity = PropertyEntity.MapFrom(property);
+            _dbContext.Properties.Add(entity);
             await _dbContext.SaveChangesAsync();
+            return PropertyEntity.MapTo(entity);
         }
 
-        public async Task DeleteProperty(int propertyId)
+        public async Task DeletePropertyAsync(int propertyId)
         {
             var entity = _dbContext.Properties.Find(propertyId);
             _dbContext.Properties.Remove(entity);
             await _dbContext.SaveChangesAsync();
         }
 
-        public async Task<Property> SaveProperty(Property property)
+        public async Task<Property> SavePropertyAsync(Property property)
         {
             var entity = PropertyEntity.MapFrom(property);
             if (_dbContext.Properties.Any(p => p.Id == property.Id))

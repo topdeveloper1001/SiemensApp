@@ -8,6 +8,7 @@ using Kendo.Mvc.UI;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using SiemensApp.Domain;
 using SiemensApp.Dto;
 using SiemensApp.Entities;
@@ -42,9 +43,10 @@ namespace SiemensApp.Controllers
             return res.ToDataSourceResult(request);
         }
 
-        public ActionResult Property_Create([DataSourceRequest]DataSourceRequest request, [Bind(Prefix = "models")]IEnumerable<Property> properties, [FromQuery] Guid siteId)
+        public async Task<ActionResult> Property_Create([DataSourceRequest]DataSourceRequest request, [FromForm] string models, [FromQuery] Guid siteId)
         {
             // Will keep the inserted entities here. Used to return the result later.
+            var properties = string.IsNullOrEmpty(models) ? new List<Property>() : JsonConvert.DeserializeObject<List<Property>>(models);
             var entities = new List<Property>();
             
             if (ModelState.IsValid)
@@ -53,7 +55,7 @@ namespace SiemensApp.Controllers
                 {
                     property.SiteId = siteId;
                     property.IsFunctionProperty = false;
-                    _propertyService.CreateProperty(property);
+                    await _propertyService.CreatePropertyAsync(property);
                     entities.Add(property);
                 }
                 
@@ -61,8 +63,9 @@ namespace SiemensApp.Controllers
             
             return Json(entities.ToDataSourceResult(request, ModelState, property => property));
         }
-        public ActionResult Property_Update([DataSourceRequest]DataSourceRequest request, [Bind(Prefix = "models")]IEnumerable<Property> properties, [FromQuery] Guid siteId)
+        public async Task<ActionResult> Property_Update([DataSourceRequest]DataSourceRequest request, [FromForm] string models, [FromQuery] Guid siteId)
         {
+            var properties = string.IsNullOrEmpty(models) ? new List<Property>() : JsonConvert.DeserializeObject<List<Property>>(models);
             // Will keep the inserted entities here. Used to return the result later.
             var entities = new List<Property>();
 
@@ -70,7 +73,7 @@ namespace SiemensApp.Controllers
             {
                 foreach (var property in properties)
                 {
-                    _propertyService.SaveProperty(property);
+                    await _propertyService.SavePropertyAsync(property);
                     entities.Add(property);
                 }
 
@@ -78,8 +81,9 @@ namespace SiemensApp.Controllers
 
             return Json(entities.ToDataSourceResult(request, ModelState, property => property));
         }
-        public ActionResult Property_Destroy([DataSourceRequest]DataSourceRequest request, [Bind(Prefix = "models")]IEnumerable<Property> properties, [FromQuery] Guid siteId)
+        public async Task<ActionResult> Property_Destroy([DataSourceRequest]DataSourceRequest request, [FromForm] string models, [FromQuery] Guid siteId)
         {
+            var properties = string.IsNullOrEmpty(models) ? new List<Property>() : JsonConvert.DeserializeObject<List<Property>>(models);
             // Will keep the inserted entities here. Used to return the result later.
             var entities = new List<Property>();
 
@@ -87,7 +91,7 @@ namespace SiemensApp.Controllers
             {
                 foreach (var property in properties)
                 {
-                    _propertyService.DeleteProperty(property.Id);
+                    await _propertyService.DeletePropertyAsync(property.Id);
                     entities.Add(property);
                 }
 

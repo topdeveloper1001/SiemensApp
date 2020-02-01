@@ -11,10 +11,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Database\Scripts\002_Create_Properties.sql" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Include="wwwroot\configuration.html" />
   </ItemGroup>
 

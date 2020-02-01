@@ -49,22 +49,25 @@
                                                 .Sortable()
                                                 .Scrollable()
                                                 .DataSource(dataSource => dataSource
+
                                                     .Custom()
+                                                    
                                                     .Batch(true)
                                                     .Schema(schema => schema.Model(m => {
-                                                        m.Id(p => p.Id);
-                                                        m.Field(p => p.Id);
-                                                        m.Field(p => p.SiteId);
-                                                        m.Field(p => p.Name);
-                                                        m.Field(p => p.IsFunctionProperty);
+                                                        m.ClearFields();
+                                                        m.Id("id");
+                                                        m.Field("id", typeof(int));
+                                                        m.Field("siteId", typeof(Guid)).DefaultValue(ViewData["siteId"]);
+                                                        m.Field("name", typeof(string));
+                                                        m.Field("isFunctionProperty", typeof(bool));
 
                                                     }).Data("data").Total("total"))
                                                     .Transport(transport =>
                                                     {
                                                         transport.Read(read => read.Action("Property_Read", "Property", new { siteId = ViewData["siteId"] }));
-                                                        transport.Create(create => create.Action("Property_Create", "Property", new { siteId = ViewData["siteId"] }));
-                                                        transport.Update(update => update.Action("Property_Update", "Property", new { siteId = ViewData["siteId"] }));
-                                                        transport.Destroy(destroy => destroy.Action("Property_Destroy", "Property", new { siteId = ViewData["siteId"] }));
+                                                        transport.Create(create => create.Action("Property_Create", "Property", new { siteId = ViewData["siteId"] }).Type(HttpVerbs.Post));
+                                                        transport.Update(update => update.Action("Property_Update", "Property", new { siteId = ViewData["siteId"] }).Type(HttpVerbs.Post));
+                                                        transport.Destroy(destroy => destroy.Action("Property_Destroy", "Property", new { siteId = ViewData["siteId"] }).Type(HttpVerbs.Post));
                                                         transport.ParameterMap("parameterMap");
                                                     }
                                                     )
