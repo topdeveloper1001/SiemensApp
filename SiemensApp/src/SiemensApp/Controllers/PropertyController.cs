@@ -42,6 +42,11 @@ namespace SiemensApp.Controllers
             var res = _propertyService.GetProperties(siteId, false);
             return res.ToDataSourceResult(request);
         }
+        public ActionResult<DataSourceResult> FunctionProperty_Read([DataSourceRequest] DataSourceRequest request, [FromQuery] Guid siteId)
+        {
+            var res = _propertyService.GetProperties(siteId, true);
+            return res.ToDataSourceResult(request);
+        }
 
         public async Task<ActionResult> Property_Create([DataSourceRequest]DataSourceRequest request, [FromForm] string models, [FromQuery] Guid siteId)
         {
@@ -53,8 +58,6 @@ namespace SiemensApp.Controllers
             {
                 foreach (var property in properties)
                 {
-                    property.SiteId = siteId;
-                    property.IsFunctionProperty = false;
                     await _propertyService.CreatePropertyAsync(property);
                     entities.Add(property);
                 }

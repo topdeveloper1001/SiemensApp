@@ -73,7 +73,7 @@ namespace SiemensApp.Controllers
         [HttpGet("/api/csvExport")]
         public async Task<IActionResult> GetCsvExport([FromQuery(Name = "siteId")] Guid siteId)
         {
-            var filePath = await _scanRequestService.ExportDataCsv();
+            var filePath = await _scanRequestService.ExportDataCsv(siteId);
 
             var stream = System.IO.File.Open(filePath, FileMode.Open);
 

@@ -30,7 +30,7 @@ namespace SiemensApp.Services
         Task UpdateScanRequest(ScanRequest scanRequest);
         Task Scan(ScanRequest scanRequest);
         Task<PropertyValueResponse> GetPropertyValueAsync(string objectId, string propertyId = null);
-        Task<string> ExportDataCsv();
+        Task<string> ExportDataCsv(Guid siteId);
     }
     public class ScanRequestService:IScanRequestService
     {
@@ -47,6 +47,7 @@ namespace SiemensApp.Services
         private readonly IMapper _mapper;
         private int ProcessingCount = 0;
         private Guid SiteId;
+        private List<PropertyEntity> lstProperties;
         public ScanRequestService(IMapper mapper, IServiceScopeFactory scope, ISystemObjectService systemObjectService, ISiteConfigurationService siteConfigurationService, IBackgroundTaskQueue taskQueue, IApplicationLifetime applicationLifetime, ILogger<ScanRequestService> logger, IHttpClientFactory httpClientFactory, IApiTokenProvider apiTokenProvider, IOptions<AppSettings> options, SiemensDbContext dbContext)
         {
             _mapper = mapper;
@@ -213,8 +214,8 @@ namespace SiemensApp.Services
                 return data.First().Properties;
             }
         }
-
-        public async Task<string> ExportDataCsv()
+        
+        public async Task<string> ExportDataCsv(Guid siteId)
         {
             var tmpFile = Path.GetTempFileName();
 
@@ -222,7 +223,7 @@ namespace SiemensApp.Services
 
             var recordCounter = 0;
 
-            var totalRecords = _dbContext.SystemObjects.Count();
+            var totalRecords = _dbContext.SystemObjects.Where(x => x.SiteId == siteId).Count();
 
             var bufferBlock = new BufferBlock<SystemObjectEntity>(new DataflowBlockOptions { BoundedCapacity = 10 });
             var transformBlock = new TransformBlock<SystemObjectEntity, CsvObject>(async (systemObject) =>
@@ -230,6 +231,7 @@ namespace SiemensApp.Services
                     CsvObject csvObject = null;
                     try
                     {
+
                         if (string.IsNullOrEmpty(systemObject.Attributes))
                         {
                             return null;
@@ -302,8 +304,11 @@ namespace SiemensApp.Services
                 bufferBlock.LinkTo(transformBlock, new DataflowLinkOptions { PropagateCompletion = true });
                 transformBlock.LinkTo(writerBlock, new DataflowLinkOptions { PropagateCompletion = true });
 
-                foreach (var systemObject in _dbContext.SystemObjects.AsNoTracking())
+                lstProperties = await _dbContext.Properties.ToListAsync();
+                foreach (var systemObject in _dbContext.SystemObjects.AsNoTracking().Where(x => x.SiteId == siteId))
                 {
+                    if (!CheckPropertiesExist(systemObject.Properties, false) || !CheckPropertiesExist(systemObject.FunctionProperties, true))
+                        continue;
                     recordCounter++;
                     if (recordCounter % 1000 == 0)
                     {
@@ -318,6 +323,20 @@ namespace SiemensApp.Services
             }
 
             return tmpFile;
+        }
+
+        private bool CheckPropertiesExist(string strProperties, bool isFunctionProperty)
+        {
+
+            if (string.IsNullOrEmpty(strProperties))
+                return false;
+            if (lstProperties == null)
+                return false;
+            var properties = JsonConvert.DeserializeObject<List<string>>(strProperties).Select(x => x.Trim('"'));
+            
+            if (lstProperties.Where(x => x.IsFunctionProperty == isFunctionProperty).Count() < 1)
+                return true;
+            return lstProperties.Exists(x => x.IsFunctionProperty == isFunctionProperty && properties.Contains(x.Name));            
         }
         private async Task<List<DataItem>> StartScan(HttpClient client, string url, LinkType linkType, SiteConfiguration siteConfiguration, ScanRequest scanRequest)
         {
