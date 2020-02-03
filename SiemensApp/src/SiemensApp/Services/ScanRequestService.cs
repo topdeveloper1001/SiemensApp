@@ -39,6 +39,7 @@ namespace SiemensApp.Services
         private readonly ILogger<ScanRequestService> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly SiemensDbContext _dbContext;
+        private readonly IServiceProvider _serviceProvider;
         private readonly AppSettings _options;
         private readonly IApiTokenProvider _apiTokenProvider;
         private readonly ISiteConfigurationService _siteConfigurationService;
@@ -47,8 +48,9 @@ namespace SiemensApp.Services
         private readonly IMapper _mapper;
         private int ProcessingCount = 0;
         private Guid SiteId;
+
         private List<PropertyEntity> lstProperties;
-        public ScanRequestService(IMapper mapper, IServiceScopeFactory scope, ISystemObjectService systemObjectService, ISiteConfigurationService siteConfigurationService, IBackgroundTaskQueue taskQueue, IApplicationLifetime applicationLifetime, ILogger<ScanRequestService> logger, IHttpClientFactory httpClientFactory, IApiTokenProvider apiTokenProvider, IOptions<AppSettings> options, SiemensDbContext dbContext)
+        public ScanRequestService(IMapper mapper, IServiceScopeFactory scope, ISystemObjectService systemObjectService, ISiteConfigurationService siteConfigurationService, IBackgroundTaskQueue taskQueue, IApplicationLifetime applicationLifetime, ILogger<ScanRequestService> logger, IHttpClientFactory httpClientFactory, IApiTokenProvider apiTokenProvider, IOptions<AppSettings> options, SiemensDbContext dbContext, IServiceProvider serviceProvider)
         {
             _mapper = mapper;
             _scope = scope;
@@ -59,6 +61,7 @@ namespace SiemensApp.Services
             _apiTokenProvider = apiTokenProvider;
             _options = options.Value;
             _dbContext = dbContext;
+            _serviceProvider = serviceProvider;
             _taskQueue = taskQueue;
             _cancellationToken = applicationLifetime.ApplicationStopping;
         }
@@ -102,40 +105,17 @@ namespace SiemensApp.Services
 
             _taskQueue.QueueBackgroundWorkItem(async action =>
             {
-                var topLevelItems = await DoWorkScan(scanRequest, siteConfiguration);
+                await DoWorkScan(scanRequest, siteConfiguration);
             });
             
         }
-        private async Task<List<DataItem>> DoWorkScan(ScanRequest scanRequest, SiteConfiguration siteConfiguration)
+        private async Task DoWorkScan(ScanRequest scanRequest, SiteConfiguration siteConfiguration)
         {
-            var startUrl = "API/api/systembrowser";
-            
-            using (var client = _httpClientFactory.CreateClient())
+            var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
+            using(var scope = scopeFactory.CreateScope())
             {
-                var token = _apiTokenProvider.GetTokenAsync(AuthenticationOptions.Create(siteConfiguration)).Result;
-
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                client.BaseAddress = new Uri(siteConfiguration.Url);
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                scanRequest.Status = ScanRequestStatus.Running;
-                scanRequest.StartTime = DateTime.UtcNow;
-                await UpdateScanRequestInMultiThread(scanRequest);
-
-                List<DataItem> topLevelItems = null;
-                try
-                {
-                    topLevelItems = await StartScan(client, startUrl, LinkType.Systembrowser, siteConfiguration, scanRequest);
-                }
-                catch(Exception ex)
-                {
-                    _logger.LogWarning($"Failed to run {siteConfiguration.SiteId}. Exception Message: {ex.Message}");
-                    scanRequest.Status = ScanRequestStatus.Failed;
-                    scanRequest.EndTime = DateTime.UtcNow;
-                    await UpdateScanRequestInMultiThread(scanRequest);
-                }
-                return topLevelItems;
+                var worker = scope.ServiceProvider.GetRequiredService<ISiemensScanWorkerService>();
+                await worker.ScanAsync(scanRequest, siteConfiguration);
             }
         }
         private List<SystemObjectEntity> GetDbItemsRecursively(DataItem item, SystemObjectEntity parent = null)
@@ -345,8 +325,8 @@ namespace SiemensApp.Services
             if (!data.IsSuccessStatusCode)
             {
                 _logger.LogWarning("Failed to invoke {statusCode} {url}", data.StatusCode, url);
-                //throw new Exception($"Failed to invoke {data.StatusCode} {url}");
-                return new List<DataItem>();
+                throw new Exception($"Failed to invoke {data.StatusCode} {url}");
+                //return new List<DataItem>();
             }
             var strData = await data.Content.ReadAsStringAsync();
             strData = strData.Trim();
@@ -417,8 +397,8 @@ namespace SiemensApp.Services
             if (!data.IsSuccessStatusCode)
             {
                 _logger.LogWarning("Failed to invoke {statusCode} {url}", data.StatusCode, url);
-                //throw new Exception($"Failed to invoke {data.StatusCode} {url}");
-                return new List<DataItem>();
+                throw new Exception($"Failed to invoke {data.StatusCode} {url}");
+                //return new List<DataItem>();
             }
             var strData = data.Content.ReadAsStringAsync().Result;
             strData = strData.Trim();
