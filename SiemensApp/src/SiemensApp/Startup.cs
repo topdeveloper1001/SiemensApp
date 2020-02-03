@@ -59,6 +59,7 @@ namespace SiemensApp
             services.AddHostedService<QueuedHostedService>();
             services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
             services.AddSingleton<IDbUpgradeChecker, DbUpgradeChecker>();
+            services.AddTransient<ISiemensScanWorkerService, SiemensScanWorkerService>();
 
             services.AddJwtAuthentication(Configuration["Auth0:Domain"], Configuration["Auth0:Audience"], _env);
             var connectionString = Configuration.GetConnectionString("SiemensDb");
