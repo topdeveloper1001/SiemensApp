@@ -79,6 +79,26 @@ namespace SiemensApp.Controllers
 
             return File(stream, "text/csv", "export.csv");
         }
+
+        [HttpGet("/api/csvExportProperties")]
+        public async Task<IActionResult> GetCsvExportProperties([FromQuery(Name = "siteId")] Guid siteId)
+        {
+            var filePath = await _scanRequestService.ExportDataCsvProperties(siteId);
+
+            var stream = System.IO.File.Open(filePath, FileMode.Open);
+
+            return File(stream, "text/csv", "exportProperties.csv");
+        }
+
+        [HttpGet("/api/csvExportFunctionProperties")]
+        public async Task<IActionResult> GetCsvExportFunctionProperties([FromQuery(Name = "siteId")] Guid siteId)
+        {
+            var filePath = await _scanRequestService.ExportDataCsvFunctionProperties(siteId);
+
+            var stream = System.IO.File.Open(filePath, FileMode.Open);
+
+            return File(stream, "text/csv", "exportFunctionProperties.csv");
+        }
     }
 
 }

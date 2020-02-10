@@ -9,7 +9,10 @@
     <h1 class="display-4">Willow + Desigo CC - System Objects</h1>
 </div>
 <div class="row">
-    <input type="button" value="Export" onclick="exportcsv(); return;" class="btn btn-default" />
+    
+    <input type="button" value="Export" onclick="exportcsv(); return;" class="btn btn-primary" style="margin-right: 5px"/>
+    <input type="button" value="Export Properties" onclick="exportpropertiescsv(); return;" class="btn btn-primary" style="margin-right: 5px"/>
+    <input type="button" value="Export Function Properties" onclick="exportfunctionpropertiescsv(); return;" class="btn btn-primary" />
 </div>
 <div class="row">
 
@@ -65,5 +68,13 @@
     function exportcsv() {
         let siteId = "@ViewData["siteId"]";
         window.location.href = `/api/csvExport?siteId=${siteId}`;
+    }
+    function exportpropertiescsv() {
+        let siteId = "@ViewData["siteId"]";
+        window.location.href = `/api/csvExportProperties?siteId=${siteId}`;
+    }
+    function exportfunctionpropertiescsv() {
+        let siteId = "@ViewData["siteId"]";
+        window.location.href = `/api/csvExportFunctionProperties?siteId=${siteId}`;
     }
 </script>

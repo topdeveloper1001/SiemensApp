@@ -272,6 +272,29 @@ namespace SiemensApp.Services
                             var propertyItem = JsonConvert.DeserializeObject<DataItem>(propertyStrData);
                             dbEntity.Properties = propertyItem?.Properties?.ToString();
                             dbEntity.FunctionProperties = propertyItem?.FunctionProperties?.ToString();
+
+                            if (!string.IsNullOrEmpty(dbEntity.Attributes))
+                            {
+
+                                var attributesObject = JsonConvert.DeserializeObject<AttributesObject>(dbEntity.Attributes);
+
+                                var defaultPropertyName = attributesObject.DefaultProperty;
+
+                                if (!string.IsNullOrEmpty(defaultPropertyName))
+                                {
+                                    var url = "API/API/properties/" + dbEntity.ObjectId;
+                                    var response = await client.GetAsync(url);
+
+                                    if (response.IsSuccessStatusCode)
+                                    {
+                                        var strResponse = await response.Content.ReadAsStringAsync();
+                                        var propertiesData = JsonConvert.DeserializeObject<List<PropertyResponse>>(strResponse);
+                                        var properties = propertiesData.First().Properties;
+                                        var defaultProperty = properties.FirstOrDefault(p => p.PropertyName == defaultPropertyName);
+                                        dbEntity.UnitDescriptor = defaultProperty?.UnitDescriptor;
+                                    }
+                                }
+                            }
                         }
                     }
 

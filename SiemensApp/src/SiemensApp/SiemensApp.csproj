@@ -11,6 +11,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Database\Scripts\003_Add_UnitDescriptor_In_SystemObjects.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="wwwroot\configuration.html" />
   </ItemGroup>
 

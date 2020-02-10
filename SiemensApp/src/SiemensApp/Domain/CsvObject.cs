@@ -5,6 +5,24 @@ using System.Threading.Tasks;
 using SiemensApp.Entities;
 namespace SiemensApp.Domain
 {
+    public class CsvObjectProperty : CsvObjectPropertyBase
+    {
+
+        public string PropertyName { get; set; }
+
+    }
+    public class CsvObjectFunctionProperty : CsvObjectPropertyBase
+    {
+
+        public string FunctionPropertyName { get; set; }
+
+    }
+    public class CsvObjectPropertyBase
+    {
+        public int Id { get; set; }
+        public int? ParentId { get; set; }
+        public string ObjectId { get; set; }
+    }
     public class CsvObject : AttributesObject
     {
         public int Id { get; set; }
@@ -25,8 +43,7 @@ namespace SiemensApp.Domain
 
         public string UnitDescriptor { get; set; }
 
-        public string FunctionProperties { get; set; }
-
+        
         public static CsvObject Create(SystemObjectEntity systemObject, AttributesObject attrObject)
         {
             return new CsvObject
@@ -36,6 +53,7 @@ namespace SiemensApp.Domain
                 SystemId = systemObject.SystemId,
                 ViewId = systemObject.ViewId,
                 Descriptor = systemObject.Descriptor,
+                UnitDescriptor = systemObject.UnitDescriptor,
                 Designation = systemObject.Designation,
                 Name = systemObject.Name,
                 SystemName = systemObject.SystemName,

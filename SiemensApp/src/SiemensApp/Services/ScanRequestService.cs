@@ -31,6 +31,8 @@ namespace SiemensApp.Services
         Task Scan(ScanRequest scanRequest);
         Task<PropertyValueResponse> GetPropertyValueAsync(string objectId, string propertyId = null);
         Task<string> ExportDataCsv(Guid siteId);
+        Task<string> ExportDataCsvProperties(Guid siteId);
+        Task<string> ExportDataCsvFunctionProperties(Guid siteId);
     }
     public class ScanRequestService:IScanRequestService
     {
@@ -219,37 +221,7 @@ namespace SiemensApp.Services
 
                         var attributesObject = JsonConvert.DeserializeObject<AttributesObject>(systemObject.Attributes);
 
-                        csvObject = CsvObject.Create(systemObject, attributesObject);
-
-                        var defaultPropertyName = attributesObject.DefaultProperty;
-
-                        if (!string.IsNullOrEmpty(defaultPropertyName))
-                        {
-                            var properties = await GetObjectProperties(systemObject.ObjectId);
-                            var defaultProperty = properties.FirstOrDefault(p => p.PropertyName == defaultPropertyName);
-                            csvObject.UnitDescriptor = defaultProperty?.UnitDescriptor;
-                        }
-
-                        if (!string.IsNullOrEmpty(systemObject.FunctionProperties))
-                        {
-                            var functionProperties =
-                                JsonConvert.DeserializeObject<List<string>>(systemObject.FunctionProperties);
-                            if (!functionProperties.Any())
-                            {
-                                return csvObject;
-                            }
-
-                            var propertyValueTasks = functionProperties
-                                .Select(f => new
-                                { PropertyName = f, ValueTask = GetPropertyValueAsync(systemObject.ObjectId, f) })
-                                .ToList();
-
-                            await Task.WhenAll(propertyValueTasks.Select(t => t.ValueTask));
-
-                            var propertyValues = propertyValueTasks.Select(t =>
-                                new { t.PropertyName, PropertyValue = t.ValueTask.Result });
-                            csvObject.FunctionProperties = JsonConvert.SerializeObject(propertyValues);
-                        }
+                        csvObject = CsvObject.Create(systemObject, attributesObject);                        
 
                         return csvObject;
                     }
@@ -287,8 +259,6 @@ namespace SiemensApp.Services
                 lstProperties = await _dbContext.Properties.ToListAsync();
                 foreach (var systemObject in _dbContext.SystemObjects.AsNoTracking().Where(x => x.SiteId == siteId))
                 {
-                    if (!CheckPropertiesExist(systemObject.Properties, false) || !CheckPropertiesExist(systemObject.FunctionProperties, true))
-                        continue;
                     recordCounter++;
                     if (recordCounter % 1000 == 0)
                     {
@@ -304,7 +274,17 @@ namespace SiemensApp.Services
 
             return tmpFile;
         }
-
+        private bool CheckPropertyExist(string property, bool isFunctionProperty)
+        {
+            if (string.IsNullOrEmpty(property))
+                return false;
+            if (lstProperties == null)
+                return false;
+            
+            if (lstProperties.Where(x => x.IsFunctionProperty == isFunctionProperty).Count() < 1)
+                return true;
+            return lstProperties.Exists(x => x.IsFunctionProperty == isFunctionProperty && x.Name == property);
+        }
         private bool CheckPropertiesExist(string strProperties, bool isFunctionProperty)
         {
 
@@ -456,6 +436,185 @@ namespace SiemensApp.Services
             });
 
             return items;
+        }
+
+        public async Task<string> ExportDataCsvProperties(Guid siteId)
+        {
+            var tmpFile = Path.GetTempFileName();
+
+            _logger.LogInformation($"Exporting data to file [{tmpFile}]");
+
+            var recordCounter = 0;
+
+            var totalRecords = _dbContext.SystemObjects.Where(x => x.SiteId == siteId).Count();
+
+            var bufferBlock = new BufferBlock<SystemObjectEntity>(new DataflowBlockOptions { BoundedCapacity = 10 });
+            var transformBlock = new TransformBlock<SystemObjectEntity, List<CsvObjectProperty>>(async (systemObject) =>
+            {
+                List<CsvObjectProperty> csvObjects = new List<CsvObjectProperty>();
+                try
+                {
+                    if (string.IsNullOrEmpty(systemObject.Properties))
+                        return csvObjects;
+                    
+                    var properties = JsonConvert.DeserializeObject<List<string>>(systemObject.Properties);
+
+                    foreach(var property in properties)
+                    {
+                        if(CheckPropertyExist(property, false))
+                        {
+                            csvObjects.Add(new CsvObjectProperty()
+                            {
+                                Id = systemObject.Id,
+                                ParentId = systemObject.ParentId,
+                                ObjectId = systemObject.ObjectId,
+                                PropertyName = property
+                            });                            
+                        }
+                    }
+
+                    
+
+                    return csvObjects;
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Error on processing system object");
+                    return csvObjects;
+                }
+            },
+                new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = 200 });
+
+
+
+            using (StreamWriter writer = new StreamWriter(tmpFile))
+            using (var csv = new CsvWriter(writer))
+            {
+                csv.Configuration.Delimiter = ",";
+                csv.WriteHeader(typeof(CsvObjectProperty));
+                csv.NextRecord();
+
+                var writerBlock = new ActionBlock<List<CsvObjectProperty>>(csvObjects =>
+                {
+                    foreach(var obj in csvObjects)
+                    {
+                        csv.WriteRecord(obj);
+                        csv.NextRecord();
+                    }
+                    
+                },
+                    new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = 1 });
+
+                bufferBlock.LinkTo(transformBlock, new DataflowLinkOptions { PropagateCompletion = true });
+                transformBlock.LinkTo(writerBlock, new DataflowLinkOptions { PropagateCompletion = true });
+
+                lstProperties = await _dbContext.Properties.ToListAsync();
+                foreach (var systemObject in _dbContext.SystemObjects.AsNoTracking().Where(x => x.SiteId == siteId))
+                {
+                    recordCounter++;
+                    if (recordCounter % 1000 == 0)
+                    {
+                        _logger.LogInformation($"Processed {recordCounter}/{totalRecords} records from database");
+                    }
+
+                    await bufferBlock.SendAsync(systemObject);
+                }
+
+                bufferBlock.Complete();
+                await writerBlock.Completion;
+            }
+
+            return tmpFile;
+        }
+
+        public async Task<string> ExportDataCsvFunctionProperties(Guid siteId)
+        {
+            var tmpFile = Path.GetTempFileName();
+
+            _logger.LogInformation($"Exporting data to file [{tmpFile}]");
+
+            var recordCounter = 0;
+
+            var totalRecords = _dbContext.SystemObjects.Where(x => x.SiteId == siteId).Count();
+
+            var bufferBlock = new BufferBlock<SystemObjectEntity>(new DataflowBlockOptions { BoundedCapacity = 10 });
+            var transformBlock = new TransformBlock<SystemObjectEntity, List<CsvObjectFunctionProperty>>(async (systemObject) =>
+            {
+                List<CsvObjectFunctionProperty> csvObjects = new List<CsvObjectFunctionProperty>();
+                try
+                {
+                    if (string.IsNullOrEmpty(systemObject.FunctionProperties))
+                        return csvObjects;
+
+                    var properties = JsonConvert.DeserializeObject<List<string>>(systemObject.FunctionProperties);
+
+                    foreach (var property in properties)
+                    {
+                        
+                            csvObjects.Add(new CsvObjectFunctionProperty()
+                            {
+                                Id = systemObject.Id,
+                                ParentId = systemObject.ParentId,
+                                ObjectId = systemObject.ObjectId,
+                                FunctionPropertyName = property
+                            });
+                       
+                    }
+
+
+
+                    return csvObjects;
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Error on processing system object");
+                    return csvObjects;
+                }
+            },
+                new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = 200 });
+
+
+
+            using (StreamWriter writer = new StreamWriter(tmpFile))
+            using (var csv = new CsvWriter(writer))
+            {
+                csv.Configuration.Delimiter = ",";
+                csv.WriteHeader(typeof(CsvObjectFunctionProperty));
+                csv.NextRecord();
+
+                var writerBlock = new ActionBlock<List<CsvObjectFunctionProperty>>(csvObjects =>
+                {
+                    foreach (var obj in csvObjects)
+                    {
+                        csv.WriteRecord(obj);
+                        csv.NextRecord();
+                    }
+
+                },
+                    new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = 1 });
+
+                bufferBlock.LinkTo(transformBlock, new DataflowLinkOptions { PropagateCompletion = true });
+                transformBlock.LinkTo(writerBlock, new DataflowLinkOptions { PropagateCompletion = true });
+
+                lstProperties = await _dbContext.Properties.ToListAsync();
+                foreach (var systemObject in _dbContext.SystemObjects.AsNoTracking().Where(x => x.SiteId == siteId))
+                {
+                    if (!CheckPropertiesExist(systemObject.Properties, false) || !CheckPropertiesExist(systemObject.FunctionProperties, true))
+                        continue;
+                    recordCounter++;
+                    if (recordCounter % 1000 == 0)
+                    {
+                        _logger.LogInformation($"Processed {recordCounter}/{totalRecords} records from database");
+                    }
+
+                    await bufferBlock.SendAsync(systemObject);
+                }
+
+                bufferBlock.Complete();
+                await writerBlock.Completion;
+            }
+
+            return tmpFile;
         }
 
         private enum LinkType
